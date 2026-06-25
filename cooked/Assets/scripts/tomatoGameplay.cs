@@ -26,6 +26,8 @@ public class tomatoGameplay : MonoBehaviour
     [SerializeField] private GameObject juiceExplosionPrefab;
 
     private Rigidbody rb;
+    [SerializeField] private AudioSource bgm;
+    [SerializeField] private AudioClip gameOverBGM;
     private bool   gameEnded;
     private bool   playerWon;
     private string endMessage = "";
@@ -100,6 +102,7 @@ public class tomatoGameplay : MonoBehaviour
         endMessage = "You reached the trash can!";
         endTime    = Time.time;
         StopTomato();
+        ChangeToGameOverMusic();
     }
 
     private void Lose(string message)
@@ -109,6 +112,7 @@ public class tomatoGameplay : MonoBehaviour
         endMessage = message;
         endTime    = Time.time;
         StopTomato();
+        ChangeToGameOverMusic();
     }
 
     private void StopTomato()
@@ -116,6 +120,13 @@ public class tomatoGameplay : MonoBehaviour
         rb.linearVelocity  = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         rb.isKinematic     = true;
+    }
+
+    private void ChangeToGameOverMusic()
+    {
+        bgm.Stop();
+        bgm.clip = gameOverBGM;
+        bgm.Play();
     }
 
     private void OnGUI()
