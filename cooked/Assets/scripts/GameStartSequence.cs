@@ -32,9 +32,10 @@ public class GameStartSequence : MonoBehaviour
     [Header("Instructions")]
     [SerializeField] private string titleText = "COOKED";
     [SerializeField] private string startButtonText = "PLAY";
-    [SerializeField] private string objectiveText = "Reach the trash can!";
-    [SerializeField] private string spongeText = "Use the sponge to bounce across the kitchen.";
-    [SerializeField, Min(0f)] private float instructionSeconds = 8f;
+    [SerializeField] private string objectiveText = "Reach the trash can without getting chopped!";
+    [SerializeField] private string spongeText = "Use the sponge to jump toward freedom.";
+    [SerializeField] private string controlsText = "Move: WASD / arrow keys";
+    [SerializeField, Min(0f)] private float instructionSeconds = 14f;
 
     private readonly List<Behaviour> disabledCameraBehaviours = new List<Behaviour>();
     private GameIntroState state = GameIntroState.StartScreen;
@@ -343,7 +344,11 @@ public class GameStartSequence : MonoBehaviour
         Color oldColor = GUI.color;
         GUI.color = Color.white;
         GUI.Label(new Rect(0f, Screen.height * 0.28f, Screen.width, 70f), titleText, titleStyle);
-        GUI.Label(new Rect(0f, Screen.height * 0.4f, Screen.width, 80f), objectiveText + "\n" + spongeText, bodyStyle);
+        GUI.Label(
+            new Rect(0f, Screen.height * 0.4f, Screen.width, 110f),
+            objectiveText + "\n" + spongeText + "\n" + controlsText,
+            bodyStyle
+        );
 
         Rect buttonRect = new Rect(
             Screen.width * 0.5f - 90f,
@@ -391,9 +396,14 @@ public class GameStartSequence : MonoBehaviour
             wordWrap = true
         };
 
-        string text = objectiveText + "\n" + spongeText;
+        string text = objectiveText + "\n" + spongeText + "\n" + controlsText;
         Vector2 size = style.CalcSize(new GUIContent(text));
-        Rect rect = new Rect(20f, 20f, Mathf.Min(Screen.width - 40f, size.x + 48f), 84f);
+        Rect rect = new Rect(
+            20f,
+            20f,
+            Mathf.Min(Screen.width - 40f, Mathf.Max(360f, size.x + 48f)),
+            116f
+        );
 
         DrawBox(rect, 0.55f);
 
