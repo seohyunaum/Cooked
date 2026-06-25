@@ -328,6 +328,8 @@ public class GameStartSequence : MonoBehaviour
             return;
         }
 
+        PlayNormalBGM();
+
         StartCoroutine(PlayIntroPan());
     }
 

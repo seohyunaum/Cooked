@@ -107,6 +107,38 @@
         canvas.style.width = "960px";
         canvas.style.height = "540px";
       }
+      var unityAudioContexts = [];
+      (function () {
+        var OriginalAudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!OriginalAudioContext) return;
+
+        function TrackingAudioContext() {
+          var context = new (Function.prototype.bind.apply(
+            OriginalAudioContext,
+            [null].concat(Array.prototype.slice.call(arguments))
+          ))();
+          unityAudioContexts.push(context);
+          return context;
+        }
+
+        TrackingAudioContext.prototype = OriginalAudioContext.prototype;
+        Object.setPrototypeOf(TrackingAudioContext, OriginalAudioContext);
+        window.AudioContext = TrackingAudioContext;
+        window.webkitAudioContext = TrackingAudioContext;
+      })();
+
+      function unlockUnityAudio() {
+        unityAudioContexts.forEach((context) => {
+          if (context && context.state === "suspended") {
+            context.resume().catch(() => {});
+          }
+        });
+      }
+
+      ["click", "keydown", "mousedown", "pointerdown", "touchstart"].forEach((eventName) => {
+        window.addEventListener(eventName, unlockUnityAudio, { capture: true, passive: true });
+      });
+
 
       document.querySelector("#unity-loading-bar").style.display = "block";
 
