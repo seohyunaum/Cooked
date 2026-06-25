@@ -1979,11 +1979,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3251608d244a7a469fd37b3c97dfe2d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  target: {fileID: 25275232}
+  target: {fileID: 1046860475}
   minChopInterval: 0.5
   maxChopInterval: 3
-  chopHeight: 39.8
-  raisedHeight: 40
+  chopHeight: 20
+  raisedHeight: 25
   chopDownSpeed: 16
   resetSpeed: 4
   airborneHorizontalOffset: 8
