@@ -1911,13 +1911,8 @@ MonoBehaviour:
   minChopInterval: 0.5
   maxChopInterval: 3
   chopHeight: 23
-<<<<<<< HEAD
   raisedHeight: 29
   chopDownSpeed: 16
-=======
-  restHeight2: 29
-  chopDownSpeed: 12
->>>>>>> 77a093d89053c1cad42e4d60d2ce4b4ab1777e1c
   resetSpeed: 4
   rotationSpeed: 10
 --- !u!65 &1393077008
