@@ -20,6 +20,8 @@ public class tomatoGameplay : MonoBehaviour
     public Font gameFont;
 
     private Rigidbody rb;
+    [SerializeField] private AudioSource bgm;
+    [SerializeField] private AudioClip gameOverBGM;
     private bool   gameEnded;
     private bool   playerWon;
     private string _loseTitle   = "";
@@ -135,6 +137,7 @@ public class tomatoGameplay : MonoBehaviour
         playerWon = true;
         StopTomato();
         InitConfetti();
+        ChangeToGameOverMusic();
     }
 
     private void Lose(string title, string message)
@@ -145,6 +148,7 @@ public class tomatoGameplay : MonoBehaviour
         playerWon    = false;
         StopTomato();
         InitSplats();
+        ChangeToGameOverMusic();
     }
 
     private void StopTomato()
@@ -214,6 +218,11 @@ public class tomatoGameplay : MonoBehaviour
             };
         }
         _splatsInitialised = true;
+    private void ChangeToGameOverMusic()
+    {
+        bgm.Stop();
+        bgm.clip = gameOverBGM;
+        bgm.Play();
     }
 
     private void OnGUI()
