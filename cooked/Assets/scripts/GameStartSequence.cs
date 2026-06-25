@@ -46,7 +46,7 @@ public class GameStartSequence : MonoBehaviour
     [SerializeField] private string objectiveText = "Run to the trashcan to flee the human!";
     [SerializeField] private string knifeText = "If you're too slow a knife will chop you.";
     [SerializeField] private string spongeText = "Is that a sponge in the sink...?";
-    [SerializeField] private string controlsText = "Move: WASD / arrow keys";
+    [SerializeField] private string controlsText = "Move: WASD / arrow keys\nCamera: right click + drag mouse";
     [SerializeField, Min(0f)] private float instructionSeconds = 0f;
 
     [Header("Story Slideshow")]

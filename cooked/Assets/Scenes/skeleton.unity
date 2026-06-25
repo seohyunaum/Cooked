@@ -3601,6 +3601,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1174049302}
   - component: {fileID: 1174049301}
+  - component: {fileID: 1174049303}
   m_Layer: 0
   m_Name: cameraTarget
   m_TagString: Untagged
@@ -3643,6 +3644,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 23.873, y: 96.062, z: 4.684}
+--- !u!114 &1174049303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1174049300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d4a67e0c2d44a2a9e65f557ab5e6321, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 730160639}
+  holdRightMouseButtonToOrbit: 1
+  mouseSensitivity: 3
+  minimumPitch: -15
+  maximumPitch: 65
 --- !u!1 &1240811542 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -2254651100017561554, guid: 9d981566270232346a80001137adbb9d, type: 3}
