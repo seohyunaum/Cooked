@@ -23,6 +23,12 @@ WebGL build does not have good graphics compared with the native app versions.
 Lighting, performance, and visual quality are much better in the actual
 downloadable builds.
 
+## Gameplay Videos
+
+- **macOS:** https://youtu.be/xdwWW9QW9kM
+- **Windows:** coming soon
+- **Web:** https://youtu.be/rsFaL_b5e24
+
 ## macOS Security Note
 
 If you are on Apple/macOS, the built app may be blocked the first time you open
