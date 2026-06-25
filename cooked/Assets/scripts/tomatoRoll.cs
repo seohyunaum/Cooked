@@ -69,11 +69,10 @@ public class tomatoRoll : MonoBehaviour
         {
             LastMoveDirection = moveDirection.normalized;
 
-            // Fixed: reversed torque direction so controls are not flipped.
             Vector3 torqueDirection = new Vector3(
-                -moveDirection.z,
+                moveDirection.z,
                 0f,
-                moveDirection.x
+                -moveDirection.x
             );
 
             rb.AddTorque(
@@ -84,7 +83,7 @@ public class tomatoRoll : MonoBehaviour
             if (!isGrounded)
             {
                 rb.AddForce(
-                    -moveDirection.normalized * airControlForce,
+                    moveDirection.normalized * airControlForce,
                     ForceMode.Acceleration
                 );
             }

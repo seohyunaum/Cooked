@@ -1,9 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
+[DefaultExecutionOrder(-10000)]
 public class GameStartSequence : MonoBehaviour
 {
+    private const string BestTimeKey = "CookedBestWinTime";
+
     private enum GameIntroState
     {
         StartScreen,
@@ -23,34 +27,49 @@ public class GameStartSequence : MonoBehaviour
     [SerializeField, Min(0.1f)] private float panDuration = 4f;
     [SerializeField] private float panHeight = 7f;
     [SerializeField] private float panDistance = 9f;
-    [SerializeField] private float overviewHeightMultiplier = 1.8f;
+    [SerializeField] private float overviewHeightMultiplier = 2.8f;
     [SerializeField] private float overviewDistanceMultiplier = 0.55f;
     [SerializeField] private float trashCanStopDistanceMultiplier = 1.8f;
+    [SerializeField] private float minimumCameraClearanceHeight = 40f;
+    [SerializeField] private float arcHeight = 12f;
+    [SerializeField, Range(0.55f, 0.98f)] private float fallStartProgress = 0.98f;
+    [SerializeField, Min(0f)] private float overviewDuration = 2f;
+    [SerializeField] private float overviewRotationDegrees = 80f;
     [SerializeField] private Vector3 startFocusOffset = new Vector3(0f, 1f, 0f);
     [SerializeField] private Vector3 goalFocusOffset = new Vector3(0f, 3.2f, 0f);
 
     [Header("Instructions")]
     [SerializeField] private string titleText = "COOKED";
     [SerializeField] private string startButtonText = "PLAY";
-    [SerializeField] private string objectiveText = "Reach the trash can without getting chopped!";
-    [SerializeField] private string spongeText = "Use the sponge to jump toward freedom.";
+    [SerializeField] private string objectiveText = "Run to the trashcan to flee the human!";
+    [SerializeField] private string spongeText = "Is that a sponge in the sink...?";
     [SerializeField] private string controlsText = "Move: WASD / arrow keys";
-    [SerializeField, Min(0f)] private float instructionSeconds = 14f;
+    [SerializeField, Min(0f)] private float instructionSeconds = 0f;
+
+    [Header("Timer")]
+    [SerializeField] private float timeLimitSeconds = 120f;
+
+    [Header("Sponge Hint")]
+    [SerializeField] private string spongeHintText = "Use the sponge!";
+    [SerializeField] private float spongeHintDistance = 5f;
 
     private readonly List<Behaviour> disabledCameraBehaviours = new List<Behaviour>();
+    private static GameStartSequence instance;
     private GameIntroState state = GameIntroState.StartScreen;
     private Transform trashCanTarget;
+    private Transform spongeTarget;
     private Vector3 savedCameraPosition;
     private Quaternion savedCameraRotation;
     private bool savedCameraPose;
     private bool playerWasKinematic;
     private bool gameplayWasEnabled;
     private float instructionStartTime;
+    private float runStartTime;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreateIfNeeded()
     {
-        if (FindObjectOfType<GameStartSequence>() != null)
+        if (instance != null || FindObjectOfType<GameStartSequence>() != null)
         {
             return;
         }
@@ -58,10 +77,82 @@ public class GameStartSequence : MonoBehaviour
         new GameObject("Game Start Sequence").AddComponent<GameStartSequence>();
     }
 
+    public static void ReloadToStartScreen()
+    {
+        Time.timeScale = 1f;
+
+        Scene activeScene = SceneManager.GetActiveScene();
+
+#if UNITY_EDITOR
+        if (!string.IsNullOrEmpty(activeScene.path))
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(
+                activeScene.path,
+                new LoadSceneParameters(LoadSceneMode.Single)
+            );
+            return;
+        }
+#endif
+
+        if (activeScene.buildIndex >= 0)
+        {
+            SceneManager.LoadScene(activeScene.buildIndex, LoadSceneMode.Single);
+            return;
+        }
+
+        SceneManager.LoadScene(activeScene.name, LoadSceneMode.Single);
+    }
+
     private void Awake()
     {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+        DontDestroyOnLoad(gameObject);
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+        ResetToStartScreen();
+    }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            instance = null;
+        }
+    }
+
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        ResetToStartScreen();
+    }
+
+    private void ResetToStartScreen()
+    {
+        StopAllCoroutines();
+        RestoreCamera();
+        ClearSceneReferences();
         FindSceneReferences();
         FreezePlayer();
+        instructionStartTime = 0f;
+        runStartTime = 0f;
+        state = GameIntroState.StartScreen;
+    }
+
+    private void ClearSceneReferences()
+    {
+        playerController = null;
+        playerGameplay = null;
+        playerBody = null;
+        introCamera = null;
+        trashCanTarget = null;
+        spongeTarget = null;
+        disabledCameraBehaviours.Clear();
+        savedCameraPose = false;
     }
 
     private void FindSceneReferences()
@@ -97,6 +188,15 @@ public class GameStartSequence : MonoBehaviour
         if (trashCanTarget == null)
         {
             trashCanTarget = FindTaggedTransform(fallbackTrashCanTag);
+        }
+
+        if (spongeTarget == null)
+        {
+            SpongeBounce sponge = FindObjectOfType<SpongeBounce>();
+            if (sponge != null)
+            {
+                spongeTarget = sponge.transform;
+            }
         }
     }
 
@@ -179,19 +279,38 @@ public class GameStartSequence : MonoBehaviour
 
         Vector3 side = Vector3.Cross(Vector3.up, pathDirection).normalized;
         Vector3 overviewFocus = Vector3.Lerp(playerFocus, goalFocus, 0.5f);
-        Vector3 endFocus = Vector3.Lerp(playerFocus, goalFocus, 0.72f);
+        Vector3 endFocus = Vector3.Lerp(playerFocus, goalFocus, 1.08f);
+        float clearHeight = Mathf.Max(
+            minimumCameraClearanceHeight,
+            panHeight * overviewHeightMultiplier
+        );
 
         Vector3 startPosition =
-            overviewFocus -
-            pathDirection * (routeLength * overviewDistanceMultiplier) +
-            side * (routeLength * 0.25f) +
-            Vector3.up * (panHeight * overviewHeightMultiplier);
+            playerFocus -
+            pathDirection * (panDistance * 0.8f) +
+            side * (routeLength * 0.18f) +
+            Vector3.up * clearHeight;
 
         Vector3 endPosition =
-            goalFocus -
-            pathDirection * (panDistance * trashCanStopDistanceMultiplier) +
-            side * 5f +
-            Vector3.up * (panHeight * 1.25f);
+            goalFocus +
+            pathDirection * (panDistance * 0.25f) +
+            side * 3f +
+            Vector3.up * clearHeight;
+
+        Vector3 highTravelPosition =
+            Vector3.Lerp(playerFocus, goalFocus, 1.14f) +
+            side * (routeLength * 0.12f) +
+            Vector3.up * clearHeight;
+
+        if (overviewDuration > 0f)
+        {
+            yield return PlayKitchenOverview(
+                overviewFocus,
+                startPosition,
+                routeLength,
+                clearHeight
+            );
+        }
 
         float elapsed = 0f;
         while (elapsed < panDuration)
@@ -199,7 +318,13 @@ public class GameStartSequence : MonoBehaviour
             float t = Mathf.SmoothStep(0f, 1f, elapsed / panDuration);
             Vector3 focus = Vector3.Lerp(overviewFocus, endFocus, t);
 
-            introCamera.transform.position = Vector3.Lerp(startPosition, endPosition, t);
+            introCamera.transform.position = GetDelayedFallPoint(
+                startPosition,
+                highTravelPosition,
+                endPosition,
+                t,
+                fallStartProgress
+            );
             introCamera.transform.rotation = Quaternion.LookRotation(
                 focus - introCamera.transform.position,
                 Vector3.up
@@ -211,6 +336,75 @@ public class GameStartSequence : MonoBehaviour
 
         RestoreCamera();
         StartPlaying();
+    }
+
+    private IEnumerator PlayKitchenOverview(
+        Vector3 focus,
+        Vector3 endPosition,
+        float routeLength,
+        float clearHeight
+    )
+    {
+        Vector3 startOffset = endPosition - focus;
+        startOffset.y = 0f;
+
+        if (startOffset.sqrMagnitude < 0.01f)
+        {
+            startOffset = Vector3.back * Mathf.Max(panDistance, routeLength * 0.5f);
+        }
+
+        float radius = Mathf.Max(startOffset.magnitude, routeLength * 0.55f);
+        Vector3 flatOffset = startOffset.normalized * radius;
+        float elapsed = 0f;
+
+        while (elapsed < overviewDuration)
+        {
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / overviewDuration);
+            Quaternion orbitRotation = Quaternion.AngleAxis(
+                Mathf.Lerp(-overviewRotationDegrees * 0.5f, 0f, t),
+                Vector3.up
+            );
+
+            Vector3 orbitOffset = orbitRotation * flatOffset;
+            introCamera.transform.position =
+                focus + orbitOffset + Vector3.up * clearHeight;
+            introCamera.transform.rotation = Quaternion.LookRotation(
+                focus - introCamera.transform.position,
+                Vector3.up
+            );
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        introCamera.transform.position = endPosition;
+        introCamera.transform.rotation = Quaternion.LookRotation(
+            focus - introCamera.transform.position,
+            Vector3.up
+        );
+    }
+
+    private Vector3 GetDelayedFallPoint(
+        Vector3 start,
+        Vector3 highPoint,
+        Vector3 end,
+        float t,
+        float fallStart
+    )
+    {
+        if (t < fallStart)
+        {
+            float travelT = Mathf.SmoothStep(0f, 1f, t / fallStart);
+            return Vector3.Lerp(start, highPoint, travelT);
+        }
+
+        float fallT = Mathf.SmoothStep(
+            0f,
+            1f,
+            (t - fallStart) / (1f - fallStart)
+        );
+
+        return Vector3.Lerp(highPoint, end, fallT);
     }
 
     private Vector3 GetPlayerPosition()
@@ -299,22 +493,51 @@ public class GameStartSequence : MonoBehaviour
         }
 
         instructionStartTime = Time.time;
+        runStartTime = Time.time;
         state = GameIntroState.Playing;
+    }
+
+    private void Update()
+    {
+        if (state != GameIntroState.Playing || playerGameplay == null || playerGameplay.HasEnded)
+        {
+            return;
+        }
+
+        if (timeLimitSeconds > 0f && GetRemainingTime() <= 0f)
+        {
+            playerGameplay.LoseFromTimer();
+        }
     }
 
     private void OnGUI()
     {
+        ApplyGameFont();
+
         switch (state)
         {
             case GameIntroState.StartScreen:
                 DrawStartScreen();
                 break;
             case GameIntroState.Panning:
-                DrawCenteredMessage("Find the trash can...");
+                DrawCenteredMessage("Escape to the trash can...");
                 break;
             case GameIntroState.Playing:
-                DrawInstructions();
+                if (playerGameplay == null || !playerGameplay.HasEnded)
+                {
+                    DrawTimer();
+                    DrawInstructions();
+                    DrawSpongeHint();
+                }
                 break;
+        }
+    }
+
+    private void ApplyGameFont()
+    {
+        if (playerGameplay != null && playerGameplay.gameFont != null)
+        {
+            GUI.skin.font = playerGameplay.gameFont;
         }
     }
 
@@ -329,12 +552,6 @@ public class GameStartSequence : MonoBehaviour
             fontStyle = FontStyle.Bold
         };
 
-        GUIStyle bodyStyle = new GUIStyle(GUI.skin.label)
-        {
-            alignment = TextAnchor.MiddleCenter,
-            fontSize = 24
-        };
-
         GUIStyle buttonStyle = new GUIStyle(GUI.skin.button)
         {
             fontSize = 28,
@@ -344,11 +561,7 @@ public class GameStartSequence : MonoBehaviour
         Color oldColor = GUI.color;
         GUI.color = Color.white;
         GUI.Label(new Rect(0f, Screen.height * 0.28f, Screen.width, 70f), titleText, titleStyle);
-        GUI.Label(
-            new Rect(0f, Screen.height * 0.4f, Screen.width, 110f),
-            objectiveText + "\n" + spongeText + "\n" + controlsText,
-            bodyStyle
-        );
+        DrawStartInstructions(new Rect(0f, Screen.height * 0.4f, Screen.width, 120f));
 
         Rect buttonRect = new Rect(
             Screen.width * 0.5f - 90f,
@@ -362,7 +575,51 @@ public class GameStartSequence : MonoBehaviour
             BeginIntroPan();
         }
 
+        DrawBestTimeRecord(new Rect(0f, Screen.height * 0.68f, Screen.width, 40f));
+
         GUI.color = oldColor;
+    }
+
+    private void DrawBestTimeRecord(Rect rect)
+    {
+        float bestTime = PlayerPrefs.GetFloat(BestTimeKey, 0f);
+        if (bestTime <= 0f)
+        {
+            return;
+        }
+
+        GUIStyle style = new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 22,
+            fontStyle = FontStyle.Bold
+        };
+
+        GUI.Label(rect, "Best time: " + FormatTime(bestTime), style);
+    }
+
+    private string FormatTime(float seconds)
+    {
+        int minutes = Mathf.FloorToInt(seconds / 60f);
+        int wholeSeconds = Mathf.FloorToInt(seconds % 60f);
+        int hundredths = Mathf.FloorToInt((seconds - Mathf.Floor(seconds)) * 100f);
+        return string.Format("{0:00}:{1:00}.{2:00}", minutes, wholeSeconds, hundredths);
+    }
+
+    private void DrawStartInstructions(Rect rect)
+    {
+        GUIStyle bodyStyle = new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 28,
+            fontStyle = FontStyle.Bold
+        };
+
+        GUI.Label(
+            rect,
+            objectiveText + "\n" + spongeText + "\n" + controlsText,
+            bodyStyle
+        );
     }
 
     private void DrawCenteredMessage(string message)
@@ -390,7 +647,7 @@ public class GameStartSequence : MonoBehaviour
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.UpperLeft,
-            fontSize = 22,
+            fontSize = 26,
             fontStyle = FontStyle.Bold,
             padding = new RectOffset(18, 18, 12, 12),
             wordWrap = true
@@ -410,6 +667,73 @@ public class GameStartSequence : MonoBehaviour
         Color oldColor = GUI.color;
         GUI.color = Color.white;
         GUI.Label(rect, text, style);
+        GUI.color = oldColor;
+    }
+
+    private void DrawTimer()
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleRight,
+            fontSize = 30,
+            fontStyle = FontStyle.Bold,
+            padding = new RectOffset(16, 16, 8, 8)
+        };
+
+        int remainingSeconds = Mathf.CeilToInt(GetRemainingTime());
+        string text = string.Format(
+            "{0:00}:{1:00}",
+            remainingSeconds / 60,
+            remainingSeconds % 60
+        );
+
+        Rect rect = new Rect(Screen.width - 180f, 20f, 160f, 52f);
+        DrawBox(rect, 0.55f);
+
+        Color oldColor = GUI.color;
+        GUI.color = remainingSeconds <= 10 ? new Color(1f, 0.35f, 0.25f) : Color.white;
+        GUI.Label(rect, text, style);
+        GUI.color = oldColor;
+    }
+
+    private float GetRemainingTime()
+    {
+        return Mathf.Max(0f, timeLimitSeconds - (Time.time - runStartTime));
+    }
+
+    private void DrawSpongeHint()
+    {
+        if (playerBody == null || spongeTarget == null)
+        {
+            return;
+        }
+
+        float distance = Vector3.Distance(
+            playerBody.position,
+            spongeTarget.position
+        );
+
+        if (distance > spongeHintDistance)
+        {
+            return;
+        }
+
+        DrawBottomMessage(spongeHintText);
+    }
+
+    private void DrawBottomMessage(string message)
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 28,
+            fontStyle = FontStyle.Bold
+        };
+
+        Rect rect = new Rect(0f, Screen.height * 0.76f, Screen.width, 56f);
+        Color oldColor = GUI.color;
+        GUI.color = Color.white;
+        GUI.Label(rect, message, style);
         GUI.color = oldColor;
     }
 

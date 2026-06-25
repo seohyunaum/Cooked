@@ -1,9 +1,10 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(Rigidbody))]
 public class tomatoGameplay : MonoBehaviour
 {
+    private const string BestTimeKey = "CookedBestWinTime";
+
     [Header("Win / Lose Tags")]
     [SerializeField] private string groundTag   = "ground";
     [SerializeField] private string trashCanTag = "trashcan";
@@ -19,14 +20,25 @@ public class tomatoGameplay : MonoBehaviour
     [Header("Font")]
     public Font gameFont;
 
+    [Header("Restart")]
+    [SerializeField] private float restartInputDelay = 0.35f;
+
     private Rigidbody rb;
     [SerializeField] private AudioSource bgm;
     [SerializeField] private AudioClip gameOverBGM;
+    [SerializeField, Range(0f, 1f)] private float gameOverBGMVolume = 1f;
     private bool   gameEnded;
     private bool   playerWon;
+    private bool   restartQueued;
     private string _loseTitle   = "";
     private string _loseMessage = "";
     private string _winMessage  = "";
+    private float  _startTime;
+    private float  _restartInputReadyTime;
+    private float  _lastWinTime;
+    private float  _bestWinTime;
+
+    public bool HasEnded => gameEnded;
 
     private struct ConfettiParticle
     {
@@ -71,7 +83,6 @@ public class tomatoGameplay : MonoBehaviour
 
     private string[] _winSubtitles = new string[]
     {
-        ResetRunTimer();
         "Escaped successfully! 🎉",
         "You actually made it. Unbelievable.",
         "Into the bin, safe and sound!",
@@ -89,16 +100,35 @@ public class tomatoGameplay : MonoBehaviour
         if (!gameEnded && loseBelowHeight && transform.position.y < loseHeight)
             Lose("YOU DIED.", _fallSubtitles[Random.Range(0, _fallSubtitles.Length)]);
 
-        if (gameEnded && Input.anyKeyDown)
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-
         if (gameEnded && playerWon && _confettiInitialised)
             UpdateConfetti();
+    }
+
+    private bool TryRestartFromEndScreen()
+    {
+        if (!gameEnded || restartQueued || Time.time < _restartInputReadyTime)
+        {
+            return false;
+        }
+
+        restartQueued = true;
+        GameStartSequence.ReloadToStartScreen();
+        return true;
     }
 
     public void ResetRunTimer()
     {
         _startTime = Time.time;
+    }
+
+    public void LoseFromTimer()
+    {
+        if (gameEnded)
+        {
+            return;
+        }
+
+        Lose("TIME'S UP!", "The kitchen caught up with you.");
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -142,10 +172,34 @@ public class tomatoGameplay : MonoBehaviour
     {
         gameEnded = true;
         playerWon = true;
+        restartQueued = false;
+        _restartInputReadyTime = Time.time + restartInputDelay;
+        RecordWinTime();
         _winMessage = _winSubtitles[Random.Range(0, _winSubtitles.Length)];
         StopTomato();
         InitConfetti();
         ChangeToGameOverMusic();
+    }
+
+    private void RecordWinTime()
+    {
+        _lastWinTime = Mathf.Max(0f, Time.time - _startTime);
+        _bestWinTime = PlayerPrefs.GetFloat(BestTimeKey, 0f);
+
+        if (_bestWinTime <= 0f || _lastWinTime < _bestWinTime)
+        {
+            _bestWinTime = _lastWinTime;
+            PlayerPrefs.SetFloat(BestTimeKey, _bestWinTime);
+            PlayerPrefs.Save();
+        }
+    }
+
+    private string FormatTime(float seconds)
+    {
+        int minutes = Mathf.FloorToInt(seconds / 60f);
+        int wholeSeconds = Mathf.FloorToInt(seconds % 60f);
+        int hundredths = Mathf.FloorToInt((seconds - Mathf.Floor(seconds)) * 100f);
+        return string.Format("{0:00}:{1:00}.{2:00}", minutes, wholeSeconds, hundredths);
     }
 
     private void Lose(string title, string message)
@@ -154,6 +208,8 @@ public class tomatoGameplay : MonoBehaviour
         _loseMessage = message;
         gameEnded    = true;
         playerWon    = false;
+        restartQueued = false;
+        _restartInputReadyTime = Time.time + restartInputDelay;
         StopTomato();
         InitSplats();
         ChangeToGameOverMusic();
@@ -237,6 +293,7 @@ public class tomatoGameplay : MonoBehaviour
 
         bgm.Stop();
         bgm.clip = gameOverBGM;
+        bgm.volume = gameOverBGMVolume;
         bgm.Play();
     }
 
@@ -248,6 +305,41 @@ public class tomatoGameplay : MonoBehaviour
             DrawWinScreen();
         else
             DrawLoseScreen();
+
+        DrawRestartClickArea();
+        HandleEndScreenKeyRestart();
+    }
+
+    private void DrawRestartClickArea()
+    {
+        if (Time.time < _restartInputReadyTime)
+        {
+            return;
+        }
+
+        Color oldColor = GUI.color;
+        GUI.color = Color.clear;
+
+        if (GUI.Button(new Rect(0f, 0f, Screen.width, Screen.height), GUIContent.none, GUIStyle.none))
+        {
+            TryRestartFromEndScreen();
+        }
+
+        GUI.color = oldColor;
+    }
+
+    private void HandleEndScreenKeyRestart()
+    {
+        Event currentEvent = Event.current;
+        if (currentEvent == null || currentEvent.type != EventType.KeyDown)
+        {
+            return;
+        }
+
+        if (TryRestartFromEndScreen())
+        {
+            currentEvent.Use();
+        }
     }
 
     private void DrawLoseScreen()
@@ -313,7 +405,7 @@ public class tomatoGameplay : MonoBehaviour
         );
         GUI.Label(
             new Rect(0, Screen.height * 0.62f, Screen.width, 40f),
-            "Press any key to try again",
+            "Press any key or click to try again",
             hintStyle
         );
     }
@@ -382,8 +474,13 @@ public class tomatoGameplay : MonoBehaviour
             subStyle
         );
         GUI.Label(
-            new Rect(0, Screen.height * 0.62f, Screen.width, 40f),
-            "Press any key to play again",
+            new Rect(0, Screen.height * 0.58f, Screen.width, 50f),
+            "Time: " + FormatTime(_lastWinTime) + "    Best: " + FormatTime(_bestWinTime),
+            subStyle
+        );
+        GUI.Label(
+            new Rect(0, Screen.height * 0.68f, Screen.width, 40f),
+            "Press any key or click to play again",
             hintStyle
         );
     }
