@@ -247,13 +247,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 278979141}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: 81.74, y: 25.904001, z: 76.829994}
+  m_LocalRotation: {x: -0, y: 0.97605336, z: -0.21753143, w: 0}
+  m_LocalPosition: {x: 83.17, y: 27.68, z: 84.07}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: 25.128, y: 180, z: 0}
 --- !u!1818360608 &278979143
 PositionConstraint:
   m_ObjectHideFlags: 0
@@ -264,8 +264,8 @@ PositionConstraint:
   m_Enabled: 1
   serializedVersion: 2
   m_Weight: 1
-  m_TranslationAtRest: {x: 81.74, y: 25.204, z: 76.34999}
-  m_TranslationOffset: {x: -0.33000183, y: 0.7440014, z: -2.2400055}
+  m_TranslationAtRest: {x: 83.17, y: 27.68, z: 84.07}
+  m_TranslationOffset: {x: 1.0999985, y: 2.5200005, z: 5}
   m_AffectTranslationX: 1
   m_AffectTranslationY: 1
   m_AffectTranslationZ: 1
@@ -453,8 +453,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 8.2849955e-10, y: 0.9996151, z: -0.00000002984898, w: 0.027745694}
-  m_LocalPosition: {x: 81.24, y: 25.904001, z: 85.829994}
+  m_LocalRotation: {x: 0, y: 0.97605336, z: -0.21753143, w: 0}
+  m_LocalPosition: {x: 82.67, y: 28.491434, z: 85.71086}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2021,7 +2021,7 @@ GameObject:
   - component: {fileID: 1429533550}
   - component: {fileID: 1429533549}
   - component: {fileID: 1429533552}
-  - component: {fileID: 1429533551}
+  - component: {fileID: 1429533553}
   m_Layer: 0
   m_Name: CinemachineCamera
   m_TagString: Untagged
@@ -2080,42 +2080,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1429533547}
   serializedVersion: 2
-  m_LocalRotation: {x: 8.2849955e-10, y: 0.9996151, z: -0.00000002984898, w: 0.027745694}
-  m_LocalPosition: {x: 81.24, y: 25.904001, z: 85.829994}
+  m_LocalRotation: {x: -0, y: 0.97605336, z: -0.21753143, w: 0}
+  m_LocalPosition: {x: 82.67, y: 28.491434, z: 85.71086}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1429533551
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1429533547}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f38bda98361e1de48a4ca2bd86ea3c17, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotationComposer
-  Composition:
-    ScreenPosition: {x: 0, y: 0}
-    DeadZone:
-      Enabled: 0
-      Size: {x: 0.2, y: 0.2}
-    HardLimits:
-      Enabled: 0
-      Size: {x: 0.8, y: 0.8}
-      Offset: {x: 0, y: 0}
-  CenterOnActivate: 1
-  TargetOffset: {x: 0, y: 0, z: 0}
-  Damping: {x: 0.5, y: 0.5}
-  Lookahead:
-    Enabled: 0
-    Time: 0
-    Smoothing: 0
-    IgnoreY: 0
 --- !u!114 &1429533552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2129,7 +2100,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineThirdPersonFollow
   Damping: {x: 0.1, y: 0.5, z: 0.3}
-  ShoulderOffset: {x: 0.5, y: -0.4, z: -7}
+  ShoulderOffset: {x: 0.5, y: -0.4, z: 0}
   VerticalArmLength: 0.4
   CameraSide: 1
   CameraDistance: 2
@@ -2142,6 +2113,19 @@ MonoBehaviour:
     CameraRadius: 0.2
     DampingIntoCollision: 0
     DampingFromCollision: 0.5
+--- !u!114 &1429533553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1429533547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4afa82ae3200b82408d605c3dbdd1e38, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotateWithFollowTarget
+  Damping: 0
 --- !u!1001 &1557810729
 PrefabInstance:
   m_ObjectHideFlags: 0

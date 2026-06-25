@@ -5,8 +5,8 @@ using UnityEngine.SceneManagement;
 public class tomatoGameplay : MonoBehaviour
 {
     [Header("Win / Lose Tags")]
-    [SerializeField] private string groundTag   = "Ground";
-    [SerializeField] private string trashCanTag = "TrashCan";
+    [SerializeField] private string groundTag   = "ground";
+    [SerializeField] private string trashCanTag = "trashcan";
     [SerializeField] private string knifeTag    = "Knife";
 
     [Header("Fall Check")]
@@ -39,7 +39,7 @@ public class tomatoGameplay : MonoBehaviour
 
     private void Start()
     {
-        _startTime = Time.time;
+        ResetRunTimer();
     }
 
     private void Update()
@@ -54,6 +54,11 @@ public class tomatoGameplay : MonoBehaviour
     private bool InGracePeriod()
     {
         return Time.time - _startTime < gracePeriod;
+    }
+
+    public void ResetRunTimer()
+    {
+        _startTime = Time.time;
     }
 
     private void OnCollisionEnter(Collision collision)
