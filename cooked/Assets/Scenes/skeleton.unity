@@ -1129,6 +1129,101 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!1001 &934131257
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 79.67
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 27.25
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 86.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.14468259
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7486378
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.6008639
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.23993993
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 149.67
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 12.403
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -74.12799
+      objectReference: {fileID: 0}
+    - target: {fileID: -2505715878227595452, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -2505715878227595452, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.066
+      objectReference: {fileID: 0}
+    - target: {fileID: -2505715878227595452, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -2254651100017561554, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_TagString
+      value: Knife
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_Name
+      value: cooking-knife-chopping
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      propertyPath: m_TagString
+      value: Knife
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1393077004}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9d981566270232346a80001137adbb9d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1393077008}
+  m_SourcePrefab: {fileID: 100100000, guid: 9d981566270232346a80001137adbb9d, type: 3}
 --- !u!1 &977428642 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0255d803ae67647d8a8c74e37c97fc5a, type: 3}
@@ -1605,6 +1700,53 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.9851904, y: 0.8532, z: 0.9953995}
   m_Center: {x: 0.6104008, y: 0.4266, z: 0.59348726}
+--- !u!1 &1393077003 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9d981566270232346a80001137adbb9d, type: 3}
+  m_PrefabInstance: {fileID: 934131257}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1393077004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1393077003}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3251608d244a7a469fd37b3c97dfe2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  target: {fileID: 25275232}
+  behindDistance: 4
+  restHeight: 29
+  smoothSpeed: 6
+  minChopInterval: 0.5
+  maxChopInterval: 3
+  chopHeight: 23
+  chopDownSpeed: 12
+  resetSpeed: 4
+--- !u!65 &1393077008
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1393077003}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1429533547
 GameObject:
   m_ObjectHideFlags: 0
@@ -2593,7 +2735,7 @@ GameObject:
   - component: {fileID: 2082948055}
   m_Layer: 0
   m_Name: tomatophysics
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2611,7 +2753,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::tomatoRoll
   rollForce: 10
-  maxSpeed: 8
+  maxSpeed: 12
   jumpForce: 6
   cameraTransform: {fileID: 0}
 --- !u!135 &2082948052
@@ -2692,10 +2834,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   groundTag: ground
   trashCanTag: trashcan
+  knifeTag: Knife
   loseBelowHeight: 1
   loseHeight: -5
   restartKey: 114
   fadeDuration: 1
+  gracePeriod: 3
+  juiceExplosionPrefab: {fileID: 100000, guid: cfc7596704bbd7f489156fcd4c05c7e9, type: 3}
 --- !u!1001 &2124880931
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2825,3 +2970,4 @@ SceneRoots:
   - {fileID: 1943363936}
   - {fileID: 1429533550}
   - {fileID: 2082948054}
+  - {fileID: 934131257}
