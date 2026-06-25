@@ -62,10 +62,6 @@ Made with care, chaos, and probably snacks by:
 
 This is a Unity game prototype for **USYD GameJam 2026**.
 
-The fuller Unity project lives in:
-
-`/Users/eomseohyeon/Documents/game jam/cooked/Cooked/cooked`
-
 Built with **Unity 6000.5.0f1** using URP.
 
 Current scene:
