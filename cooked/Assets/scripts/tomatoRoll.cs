@@ -7,12 +7,16 @@ public class tomatoRoll : MonoBehaviour
     public float rollForce = 10f;
     public float maxSpeed = 8f;
     public float jumpForce = 6f;
+    public float airControlForce = 18f;
+    public float maxAirSpeed = 18f;
 
     [Header("Camera-relative movement")]
     public Transform cameraTransform;
 
     private Rigidbody rb;
     private bool isGrounded;
+
+    public bool IsGrounded => isGrounded;
 
     public Vector3 LastMoveDirection { get; private set; }
         = Vector3.forward;
@@ -76,6 +80,14 @@ public class tomatoRoll : MonoBehaviour
                 torqueDirection * rollForce,
                 ForceMode.Force
             );
+
+            if (!isGrounded)
+            {
+                rb.AddForce(
+                    -moveDirection.normalized * airControlForce,
+                    ForceMode.Acceleration
+                );
+            }
         }
 
         LimitSpeed();
@@ -104,10 +116,12 @@ public class tomatoRoll : MonoBehaviour
             velocity.z
         );
 
-        if (flatVelocity.magnitude > maxSpeed)
+        float currentMaxSpeed = isGrounded ? maxSpeed : maxAirSpeed;
+
+        if (flatVelocity.magnitude > currentMaxSpeed)
         {
             Vector3 limitedVelocity =
-                flatVelocity.normalized * maxSpeed;
+                flatVelocity.normalized * currentMaxSpeed;
 
             rb.linearVelocity = new Vector3(
                 limitedVelocity.x,
