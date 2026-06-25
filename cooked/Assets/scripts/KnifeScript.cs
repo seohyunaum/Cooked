@@ -2,6 +2,10 @@ using UnityEngine;
 
 public class KnifeFollow : MonoBehaviour
 {
+    [Header("Position Offset")]
+    public float offsetX = 0f;
+    public float offsetZ = 0f;
+    
     [Header("Target")]
     public Transform target;
 
@@ -29,7 +33,8 @@ public class KnifeFollow : MonoBehaviour
 
     void Start()
     {
-        _currentY     = raisedHeight;
+        _currentY     = transform.position.y;  // use whatever Y you set in Inspector
+        raisedHeight  = transform.position.y;  // treat it as the rest height too
         _nextChopTime = Random.Range(minChopInterval, maxChopInterval);
         _chopping     = true;
         _currentXZ    = new Vector3(transform.position.x, 0f, transform.position.z);
@@ -85,7 +90,7 @@ public class KnifeFollow : MonoBehaviour
             }
         }
 
-        transform.position = new Vector3(x, _currentY, z);
+        transform.position = new Vector3(x + offsetX, _currentY, z + offsetZ);
 
         // Face the direction the tomato is moving
         if (_currentDir != Vector3.zero)
