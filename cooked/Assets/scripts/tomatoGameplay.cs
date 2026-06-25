@@ -26,6 +26,7 @@ public class tomatoGameplay : MonoBehaviour
     private bool   playerWon;
     private string _loseTitle   = "";
     private string _loseMessage = "";
+    private string _winMessage  = "";
 
     private struct ConfettiParticle
     {
@@ -135,6 +136,7 @@ public class tomatoGameplay : MonoBehaviour
     {
         gameEnded = true;
         playerWon = true;
+        _winMessage = _winSubtitles[Random.Range(0, _winSubtitles.Length)];
         StopTomato();
         InitConfetti();
         ChangeToGameOverMusic();
@@ -218,8 +220,15 @@ public class tomatoGameplay : MonoBehaviour
             };
         }
         _splatsInitialised = true;
+    }
+
     private void ChangeToGameOverMusic()
     {
+        if (bgm == null || gameOverBGM == null)
+        {
+            return;
+        }
+
         bgm.Stop();
         bgm.clip = gameOverBGM;
         bgm.Play();
@@ -356,8 +365,6 @@ public class tomatoGameplay : MonoBehaviour
         };
         hintStyle.normal.textColor = new Color(0.7f, 1f, 0.7f);
 
-        string winSubtitle = _winSubtitles[Random.Range(0, _winSubtitles.Length)];
-
         GUI.Label(
             new Rect(0, Screen.height * 0.25f, Screen.width, 140f),
             "SAFE! 🍅",
@@ -365,7 +372,7 @@ public class tomatoGameplay : MonoBehaviour
         );
         GUI.Label(
             new Rect(0, Screen.height * 0.52f, Screen.width, 50f),
-            winSubtitle,
+            _winMessage,
             subStyle
         );
         GUI.Label(
