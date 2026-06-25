@@ -42,6 +42,7 @@ public class GameStartSequence : MonoBehaviour
     [Header("Instructions")]
     [SerializeField] private string titleText = "COOKED";
     [SerializeField] private string startButtonText = "PLAY";
+    [SerializeField] private string exitButtonText = "EXIT";
     [SerializeField] private string objectiveText = "Run to the trashcan to flee the human!";
     [SerializeField] private string knifeText = "If you're too slow a knife will chop you.";
     [SerializeField] private string spongeText = "Is that a sponge in the sink...?";
@@ -570,6 +571,12 @@ public class GameStartSequence : MonoBehaviour
             playerGameplay.ResetRunTimer();
         }
 
+        KnifeFollow knife = FindObjectOfType<KnifeFollow>();
+        if (knife != null)
+        {
+            knife.ResetSpawnDelay();
+        }
+
         instructionStartTime = Time.time;
         runStartTime = Time.time;
         state = GameIntroState.Playing;
@@ -607,7 +614,7 @@ public class GameStartSequence : MonoBehaviour
                 DrawStartScreen();
                 break;
             case GameIntroState.Panning:
-                DrawCenteredMessage("Escape to the trash can...");
+                DrawPanningMessage("Escape to the trash can...");
                 break;
             case GameIntroState.Playing:
                 if (playerGameplay == null || !playerGameplay.HasEnded)
@@ -779,13 +786,14 @@ public class GameStartSequence : MonoBehaviour
             return;
         }
 
-        float padding = Mathf.Min(Screen.width, Screen.height) * 0.025f;
+        Rect safeRect = GetSafeRect(72f);
+        float padding = Mathf.Min(safeRect.width, safeRect.height) * 0.025f;
         Rect panelRect = GetFittedStoryPanelRect(
             panel,
-            padding,
-            padding,
-            Screen.width - padding * 2f,
-            Screen.height - padding * 2f
+            safeRect.x + padding,
+            safeRect.y + padding,
+            safeRect.width - padding * 2f,
+            safeRect.height - padding * 2f
         );
 
         Color oldColor = GUI.color;
@@ -819,15 +827,22 @@ public class GameStartSequence : MonoBehaviour
     {
         GUIStyle promptStyle = new GUIStyle(GUI.skin.label)
         {
-            alignment = TextAnchor.LowerCenter,
-            fontSize = Mathf.Clamp(Screen.height / 38, 16, 28),
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = ScaleFont(30, 24, 56),
             fontStyle = FontStyle.Bold
         };
 
         Color oldColor = GUI.color;
         GUI.color = new Color(0f, 0f, 0f, 0.85f);
+        Rect safeRect = GetSafeRect(90f);
+        float promptHeight = ScaleLength(70f);
         GUI.Label(
-            new Rect(0f, 0f, Screen.width, Screen.height - 18f),
+            new Rect(
+                safeRect.x,
+                safeRect.yMax - promptHeight - ScaleLength(54f),
+                safeRect.width,
+                promptHeight
+            ),
             storySkipText,
             promptStyle
         );
@@ -849,36 +864,70 @@ public class GameStartSequence : MonoBehaviour
         GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 56,
+            fontSize = ScaleFont(62, 48, 104),
             fontStyle = FontStyle.Bold
         };
 
         GUIStyle buttonStyle = new GUIStyle(GUI.skin.button)
         {
-            fontSize = 28,
+            fontSize = ScaleFont(28, 24, 52),
             fontStyle = FontStyle.Bold
         };
 
         Color oldColor = GUI.color;
         GUI.color = Color.white;
-        GUI.Label(new Rect(0f, Screen.height * 0.28f, Screen.width, 70f), titleText, titleStyle);
-        DrawStartInstructions(new Rect(0f, Screen.height * 0.4f, Screen.width, 120f));
-
-        Rect buttonRect = new Rect(
-            Screen.width * 0.5f - 90f,
-            Screen.height * 0.64f,
-            180f,
-            58f
+        Rect safeRect = GetSafeRect(20f);
+        GUI.Label(
+            new Rect(safeRect.x, safeRect.y + safeRect.height * 0.18f, safeRect.width, ScaleLength(92f)),
+            titleText,
+            titleStyle
+        );
+        DrawStartInstructions(
+            new Rect(safeRect.x, safeRect.y + safeRect.height * 0.31f, safeRect.width, ScaleLength(190f))
         );
 
-        if (GUI.Button(buttonRect, startButtonText, buttonStyle))
+        float buttonWidth = ScaleLength(170f);
+        float buttonHeight = ScaleLength(62f);
+        float buttonGap = ScaleLength(24f);
+        float buttonY = safeRect.y + safeRect.height * 0.70f;
+        float totalButtonWidth = buttonWidth * 2f + buttonGap;
+        Rect playButtonRect = new Rect(
+            safeRect.center.x - totalButtonWidth * 0.5f,
+            buttonY,
+            buttonWidth,
+            buttonHeight
+        );
+        Rect exitButtonRect = new Rect(
+            playButtonRect.xMax + buttonGap,
+            buttonY,
+            buttonWidth,
+            buttonHeight
+        );
+
+        if (GUI.Button(playButtonRect, startButtonText, buttonStyle))
         {
             BeginIntroPan();
         }
 
-        DrawBestTimeRecord(new Rect(0f, Screen.height * 0.75f, Screen.width, 40f));
+        if (GUI.Button(exitButtonRect, exitButtonText, buttonStyle))
+        {
+            ExitGame();
+        }
+
+        DrawBestTimeRecord(
+            new Rect(safeRect.x, safeRect.y + safeRect.height * 0.82f, safeRect.width, ScaleLength(50f))
+        );
 
         GUI.color = oldColor;
+    }
+
+    private void ExitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     private void DrawBestTimeRecord(Rect rect)
@@ -892,7 +941,7 @@ public class GameStartSequence : MonoBehaviour
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 22,
+            fontSize = ScaleFont(28, 22, 48),
             fontStyle = FontStyle.Bold
         };
 
@@ -912,7 +961,7 @@ public class GameStartSequence : MonoBehaviour
         GUIStyle bodyStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 28,
+            fontSize = ScaleFont(28, 24, 48),
             fontStyle = FontStyle.Bold
         };
 
@@ -928,13 +977,43 @@ public class GameStartSequence : MonoBehaviour
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 28,
+            fontSize = ScaleFont(34, 28, 60),
             fontStyle = FontStyle.Bold
         };
 
         Color oldColor = GUI.color;
         GUI.color = Color.white;
-        GUI.Label(new Rect(0f, Screen.height * 0.08f, Screen.width, 50f), message, style);
+        Rect safeRect = GetSafeRect(20f);
+        GUI.Label(
+            new Rect(safeRect.x, safeRect.y + safeRect.height * 0.08f, safeRect.width, ScaleLength(58f)),
+            message,
+            style
+        );
+        GUI.color = oldColor;
+    }
+
+    private void DrawPanningMessage(string message)
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = ScaleFont(52, 40, 92),
+            fontStyle = FontStyle.Bold
+        };
+
+        Color oldColor = GUI.color;
+        GUI.color = Color.white;
+        Rect safeRect = GetSafeRect(20f);
+        GUI.Label(
+            new Rect(
+                safeRect.x,
+                safeRect.y + safeRect.height * 0.08f,
+                safeRect.width,
+                ScaleLength(100f)
+            ),
+            message,
+            style
+        );
         GUI.color = oldColor;
     }
 
@@ -948,19 +1027,26 @@ public class GameStartSequence : MonoBehaviour
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.UpperLeft,
-            fontSize = 26,
+            fontSize = ScaleFont(26, 22, 44),
             fontStyle = FontStyle.Bold,
-            padding = new RectOffset(18, 18, 12, 12),
+            padding = new RectOffset(
+                Mathf.RoundToInt(ScaleLength(14f)),
+                Mathf.RoundToInt(ScaleLength(14f)),
+                Mathf.RoundToInt(ScaleLength(10f)),
+                Mathf.RoundToInt(ScaleLength(10f))
+            ),
             wordWrap = true
         };
 
         string text = objectiveText + "\n" +  knifeText + "\n" + spongeText + "\n" + controlsText;
         Vector2 size = style.CalcSize(new GUIContent(text));
+        float paddingWidth = ScaleLength(36f);
+        Rect safeRect = GetSafeRect(20f);
         Rect rect = new Rect(
-            20f,
-            20f,
-            Mathf.Min(Screen.width - 40f, Mathf.Max(360f, size.x + 48f)),
-            116f
+            safeRect.x,
+            safeRect.y,
+            Mathf.Min(safeRect.width, Mathf.Max(ScaleLength(380f), size.x + paddingWidth)),
+            ScaleLength(142f)
         );
 
         DrawBox(rect, 0.55f);
@@ -976,9 +1062,14 @@ public class GameStartSequence : MonoBehaviour
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleRight,
-            fontSize = 30,
+            fontSize = ScaleFont(40, 32, 70),
             fontStyle = FontStyle.Bold,
-            padding = new RectOffset(16, 16, 8, 8)
+            padding = new RectOffset(
+                Mathf.RoundToInt(ScaleLength(16f)),
+                Mathf.RoundToInt(ScaleLength(16f)),
+                Mathf.RoundToInt(ScaleLength(8f)),
+                Mathf.RoundToInt(ScaleLength(8f))
+            )
         };
 
         int remainingSeconds = Mathf.CeilToInt(GetRemainingTime());
@@ -988,7 +1079,9 @@ public class GameStartSequence : MonoBehaviour
             remainingSeconds % 60
         );
 
-        Rect rect = new Rect(Screen.width - 180f, 20f, 160f, 52f);
+        float timerWidth = ScaleLength(220f);
+        Rect safeRect = GetSafeRect(20f);
+        Rect rect = new Rect(safeRect.xMax - timerWidth, safeRect.y, timerWidth, ScaleLength(76f));
         DrawBox(rect, 0.55f);
 
         Color oldColor = GUI.color;
@@ -1027,15 +1120,53 @@ public class GameStartSequence : MonoBehaviour
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 28,
+            fontSize = ScaleFont(36, 30, 68),
             fontStyle = FontStyle.Bold
         };
 
-        Rect rect = new Rect(0f, Screen.height * 0.76f, Screen.width, 56f);
+        Rect safeRect = GetSafeRect(32f);
+        Rect rect = new Rect(
+            safeRect.x,
+            safeRect.y + safeRect.height * 0.64f,
+            safeRect.width,
+            ScaleLength(86f)
+        );
         Color oldColor = GUI.color;
         GUI.color = Color.white;
         GUI.Label(rect, message, style);
         GUI.color = oldColor;
+    }
+
+    private int ScaleFont(float baseSize, int minSize, int maxSize)
+    {
+        return Mathf.RoundToInt(Mathf.Clamp(baseSize * GetScreenScale(), minSize, maxSize));
+    }
+
+    private float ScaleLength(float baseLength)
+    {
+        return baseLength * GetScreenScale();
+    }
+
+    private float GetScreenScale()
+    {
+        float scale = Mathf.Min(Screen.width / 1280f, Screen.height / 720f);
+        return Mathf.Clamp(scale * 1.18f, 1f, 2.05f);
+    }
+
+    private Rect GetSafeRect(float extraMargin)
+    {
+        Rect safeRect = Screen.safeArea;
+        if (safeRect.width <= 0f || safeRect.height <= 0f)
+        {
+            safeRect = new Rect(0f, 0f, Screen.width, Screen.height);
+        }
+
+        float margin = ScaleLength(extraMargin);
+        safeRect.xMin = Mathf.Min(safeRect.xMin + margin, Screen.width * 0.5f);
+        safeRect.xMax = Mathf.Max(safeRect.xMax - margin, Screen.width * 0.5f);
+        safeRect.yMin = Mathf.Min(safeRect.yMin + margin, Screen.height * 0.5f);
+        safeRect.yMax = Mathf.Max(safeRect.yMax - margin, Screen.height * 0.5f);
+        return safeRect;
     }
 
     private void DrawDimBackground(float alpha)

@@ -82,11 +82,11 @@ public class tomatoGameplay : MonoBehaviour
 
     private string[] _knifeSubtitles = new string[]
     {
-        "Welp. You're cooked. 🍅",
+        "Welp. You're cooked.",
         "Diced. Sliced. Done.",
         "Today's special: tomato soup.",
         "The knife wins this round.",
-        "You've been... chopped. 🔪"
+        "You've been... chopped."
     };
 
     private string[] _fallSubtitles = new string[]
@@ -95,16 +95,16 @@ public class tomatoGameplay : MonoBehaviour
         "Gravity: 1. Tomato: 0.",
         "That's a long way down for a little guy.",
         "Straight off the edge. Classic.",
-        "Into the void you go! 🕳️"
+        "Into the void you go!"
     };
 
     private string[] _winSubtitles = new string[]
     {
-        "Escaped successfully! 🎉",
+        "Escaped successfully!",
         "You actually made it. Unbelievable.",
         "Into the bin, safe and sound!",
         "One small roll for tomato, one giant leap for tomatokind.",
-        "The knife never stood a chance. 😎"
+        "The knife never stood a chance."
     };
 
     private void Awake()
@@ -574,7 +574,7 @@ public class tomatoGameplay : MonoBehaviour
         GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 120,
+            fontSize = ScaleFont(138, 88, 220),
             fontStyle = FontStyle.Bold
         };
 
@@ -583,7 +583,7 @@ public class tomatoGameplay : MonoBehaviour
         GUIStyle subStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 60
+            fontSize = ScaleFont(72, 46, 116)
         };
 
         subStyle.normal.textColor = new Color(1f, 0.7f, 0.7f);
@@ -591,25 +591,29 @@ public class tomatoGameplay : MonoBehaviour
         GUIStyle hintStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 60
+            fontSize = ScaleFont(58, 38, 96)
         };
 
         hintStyle.normal.textColor = new Color(1f, 0.5f, 0.5f);
 
+        float titleHeight = ScaleLength(220f);
+        float subHeight = ScaleLength(150f);
+        float hintHeight = ScaleLength(130f);
+
         GUI.Label(
-            new Rect(0, Screen.height * 0.25f, Screen.width, 140f),
+            new Rect(0, Screen.height * 0.22f, Screen.width, titleHeight),
             _loseTitle,
             titleStyle
         );
 
         GUI.Label(
-            new Rect(0, Screen.height * 0.52f, Screen.width, 50f),
+            new Rect(0, Screen.height * 0.50f, Screen.width, subHeight),
             _loseMessage,
             subStyle
         );
 
         GUI.Label(
-            new Rect(0, Screen.height * 0.62f, Screen.width, 40f),
+            new Rect(0, Screen.height * 0.64f, Screen.width, hintHeight),
             "Press any key or click to try again",
             hintStyle
         );
@@ -655,7 +659,7 @@ public class tomatoGameplay : MonoBehaviour
         GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 120,
+            fontSize = ScaleFont(138, 88, 220),
             fontStyle = FontStyle.Bold
         };
 
@@ -664,7 +668,7 @@ public class tomatoGameplay : MonoBehaviour
         GUIStyle subStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 32
+            fontSize = ScaleFont(44, 32, 82)
         };
 
         subStyle.normal.textColor = new Color(0.9f, 1f, 0.9f);
@@ -672,33 +676,56 @@ public class tomatoGameplay : MonoBehaviour
         GUIStyle hintStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 24
+            fontSize = ScaleFont(34, 26, 62)
         };
 
         hintStyle.normal.textColor = new Color(0.7f, 1f, 0.7f);
 
+        float titleHeight = ScaleLength(220f);
+        float subHeight = ScaleLength(108f);
+        float hintHeight = ScaleLength(88f);
+
         GUI.Label(
-            new Rect(0, Screen.height * 0.25f, Screen.width, 140f),
-            "SAFE! 🍅",
+            new Rect(0, Screen.height * 0.22f, Screen.width, titleHeight),
+            "SAFE!",
             titleStyle
         );
 
         GUI.Label(
-            new Rect(0, Screen.height * 0.52f, Screen.width, 50f),
+            new Rect(0, Screen.height * 0.50f, Screen.width, subHeight),
             _winMessage,
             subStyle
         );
 
         GUI.Label(
-            new Rect(0, Screen.height * 0.58f, Screen.width, 50f),
+            new Rect(0, Screen.height * 0.59f, Screen.width, subHeight),
             "Time: " + FormatTime(_lastWinTime) + "    Best: " + FormatTime(_bestWinTime),
             subStyle
         );
 
         GUI.Label(
-            new Rect(0, Screen.height * 0.68f, Screen.width, 40f),
+            new Rect(0, Screen.height * 0.70f, Screen.width, hintHeight),
             "Press any key or click to play again",
             hintStyle
+        );
+    }
+
+    private float ScaleLength(float baseLength)
+    {
+        return baseLength * GetScreenScale();
+    }
+
+    private int ScaleFont(float baseSize, int minSize, int maxSize)
+    {
+        return Mathf.RoundToInt(Mathf.Clamp(baseSize * GetScreenScale(), minSize, maxSize));
+    }
+
+    private float GetScreenScale()
+    {
+        return Mathf.Clamp(
+            Mathf.Min(Screen.width / 1280f, Screen.height / 720f) * 1.18f,
+            1f,
+            2.05f
         );
     }
 }

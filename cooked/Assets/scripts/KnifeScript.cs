@@ -12,6 +12,7 @@ public class KnifeFollow : MonoBehaviour
     [SerializeField] private float directionSharpness = 10f;
 
     [Header("Appear When Tomato Slows")]
+    [SerializeField] private float spawnDelayAfterGameplayStarts = 5f;
     [SerializeField] private float movedSpeedThreshold = 0.1f;
     [SerializeField] private float slowSpeedThreshold = 3.5f;
     [SerializeField] private float secondsSlowBeforeAppearing = 0.2f;
@@ -39,6 +40,7 @@ public class KnifeFollow : MonoBehaviour
     private Vector3 currentMoveDirection = Vector3.forward;
     private Quaternion initialRotation;
     private float slowTimer;
+    private float gameplayStartTime;
     private bool hasMoved;
     private bool isVisible;
 
@@ -50,6 +52,7 @@ public class KnifeFollow : MonoBehaviour
 
         FindTarget();
         FindSponge();
+        ResetSpawnDelay();
         SetKnifeVisible(false);
 
         if (target != null)
@@ -116,6 +119,12 @@ public class KnifeFollow : MonoBehaviour
 
     private bool ShouldShowKnife()
     {
+        if (Time.time - gameplayStartTime < spawnDelayAfterGameplayStarts)
+        {
+            slowTimer = 0f;
+            return false;
+        }
+
         float speed = GetTargetFlatSpeed();
 
         if (speed > movedSpeedThreshold)
@@ -142,6 +151,14 @@ public class KnifeFollow : MonoBehaviour
 
         slowTimer += Time.deltaTime;
         return slowTimer >= secondsSlowBeforeAppearing;
+    }
+
+    public void ResetSpawnDelay()
+    {
+        gameplayStartTime = Time.time;
+        slowTimer = 0f;
+        hasMoved = false;
+        SetKnifeVisible(false);
     }
 
     private bool CanSpawnOnSurface()
