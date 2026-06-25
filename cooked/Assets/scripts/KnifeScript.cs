@@ -13,6 +13,10 @@ public class KnifeFollow : MonoBehaviour
     public float chopDownSpeed   = 20f;
     public float resetSpeed      = 10f;
 
+    [Header("Airborne Avoidance")]
+    public float airborneHorizontalOffset = 8f;
+    public float airborneFollowSharpness = 8f;
+
     [Header("Rotation")]
     public float rotationSpeed = 6f;
 
@@ -21,12 +25,14 @@ public class KnifeFollow : MonoBehaviour
     private bool    _chopping = true;
     private float   _currentY;
     private Vector3 _currentDir = Vector3.forward;
+    private Vector3 _currentXZ;
 
     void Start()
     {
         _currentY     = raisedHeight;
         _nextChopTime = Random.Range(minChopInterval, maxChopInterval);
         _chopping     = true;
+        _currentXZ    = new Vector3(transform.position.x, 0f, transform.position.z);
     }
 
     void Update()
@@ -43,9 +49,15 @@ public class KnifeFollow : MonoBehaviour
             Time.deltaTime * rotationSpeed
         );
 
-        // XZ: snap directly onto tomato, no lag
-        float x = target.position.x;
-        float z = target.position.z;
+        Vector3 desiredXZ = GetDesiredXZPosition(roll, targetDir);
+        _currentXZ = Vector3.Lerp(
+            _currentXZ,
+            desiredXZ,
+            1f - Mathf.Exp(-airborneFollowSharpness * Time.deltaTime)
+        );
+
+        float x = _currentXZ.x;
+        float z = _currentXZ.z;
 
         // Y: chop straight down and back up
         if (_chopping)
@@ -88,5 +100,27 @@ public class KnifeFollow : MonoBehaviour
                 Time.deltaTime * rotationSpeed
             );
         }
+    }
+
+    private Vector3 GetDesiredXZPosition(tomatoRoll roll, Vector3 targetDir)
+    {
+        Vector3 targetXZ = new Vector3(target.position.x, 0f, target.position.z);
+
+        if (roll == null || roll.IsGrounded)
+        {
+            return targetXZ;
+        }
+
+        Vector3 awayDirection = targetDir.sqrMagnitude > 0.01f
+            ? -targetDir.normalized
+            : -target.forward;
+        awayDirection.y = 0f;
+
+        if (awayDirection.sqrMagnitude < 0.01f)
+        {
+            awayDirection = Vector3.back;
+        }
+
+        return targetXZ + awayDirection.normalized * airborneHorizontalOffset;
     }
 }

@@ -832,7 +832,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 03bca02857b7943518ca84e7c53f89b5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 80.37
+      value: 83.09
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 03bca02857b7943518ca84e7c53f89b5, type: 3}
       propertyPath: m_LocalRotation.w
@@ -873,7 +873,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 03bca02857b7943518ca84e7c53f89b5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1626973144}
   m_SourcePrefab: {fileID: 100100000, guid: 03bca02857b7943518ca84e7c53f89b5, type: 3}
 --- !u!1 &581263046 stripped
 GameObject:
@@ -1910,10 +1913,12 @@ MonoBehaviour:
   target: {fileID: 25275232}
   minChopInterval: 0.5
   maxChopInterval: 3
-  chopHeight: 23
-  raisedHeight: 29
+  chopHeight: 39.8
+  raisedHeight: 40
   chopDownSpeed: 16
   resetSpeed: 4
+  airborneHorizontalOffset: 8
+  airborneFollowSharpness: 8
   rotationSpeed: 10
 --- !u!65 &1393077008
 BoxCollider:
@@ -2236,6 +2241,33 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 5332223226044652481, guid: 947646d5f38564694924947168e744c3, type: 3}
+--- !u!1 &1626973140 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 03bca02857b7943518ca84e7c53f89b5, type: 3}
+  m_PrefabInstance: {fileID: 545827632}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &1626973144
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1626973140}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 5915496029301573913, guid: 03bca02857b7943518ca84e7c53f89b5, type: 3}
 --- !u!1 &1696993869 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1926960415663144798, guid: 939afeda040ae4b918dd293ec47fdf72, type: 3}
@@ -2871,6 +2903,8 @@ MonoBehaviour:
   rollForce: 10
   maxSpeed: 12
   jumpForce: 6
+  airControlForce: 18
+  maxAirSpeed: 18
   cameraTransform: {fileID: 0}
 --- !u!135 &2082948052
 SphereCollider:
