@@ -24,8 +24,8 @@ public class KnifeFollow : MonoBehaviour
 
     [Header("Vertical Chop")]
     [SerializeField] private float raisedHeightOffset = 1f;
-    [SerializeField] private float loweredHeightOffset = 0.45f;
-    [SerializeField] private float chopSpeed = 1.35f;
+    [SerializeField] private float loweredHeightOffset = 0.1f;
+    [SerializeField] private float chopSpeed = 3.2f;
 
     [Header("Rotation")]
     [SerializeField] private bool keepSceneRotation = true;

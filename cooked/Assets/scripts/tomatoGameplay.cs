@@ -24,9 +24,27 @@ public class tomatoGameplay : MonoBehaviour
     [SerializeField] private float restartInputDelay = 0.35f;
 
     private Rigidbody rb;
+
+    [Header("Music")]
     [SerializeField] private AudioSource bgm;
     [SerializeField] private AudioClip gameOverBGM;
     [SerializeField, Range(0f, 1f)] private float gameOverBGMVolume = 1f;
+
+    [Header("Lose Scream")]
+    [SerializeField] private AudioClip loseScream;
+    [SerializeField] private AudioSource loseScreamSource;
+    [SerializeField, Range(0f, 3f)] private float loseScreamVolume = 2.5f;
+
+    [Header("Ground Squish Sound")]
+    [SerializeField] private AudioClip squishedSound;
+    [SerializeField] private AudioSource squishedAudioSource;
+    [SerializeField, Range(0f, 3f)] private float squishedVolume = 1f;
+
+    [Header("Win Cheer Sound")]
+    [SerializeField] private AudioClip winCheer;
+    [SerializeField] private AudioSource winCheerSource;
+    [SerializeField, Range(0f, 3f)] private float winCheerVolume = 1f;
+
     private bool   gameEnded;
     private bool   playerWon;
     private bool   restartQueued;
@@ -62,7 +80,6 @@ public class tomatoGameplay : MonoBehaviour
     private SplatCircle[] _splats;
     private bool _splatsInitialised = false;
 
-    // Random funny messages for each lose condition
     private string[] _knifeSubtitles = new string[]
     {
         "Welp. You're cooked. 🍅",
@@ -93,15 +110,26 @@ public class tomatoGameplay : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        SetupLoseScreamSource();
+        SetupSquishedAudioSource();
+        SetupWinCheerSource();
     }
 
     private void Update()
     {
         if (!gameEnded && loseBelowHeight && transform.position.y < loseHeight)
-            Lose("YOU DIED.", _fallSubtitles[Random.Range(0, _fallSubtitles.Length)]);
+        {
+            Lose(
+                "YOU DIED.",
+                _fallSubtitles[Random.Range(0, _fallSubtitles.Length)],
+                false
+            );
+        }
 
         if (gameEnded && playerWon && _confettiInitialised)
+        {
             UpdateConfetti();
+        }
     }
 
     private bool TryRestartFromEndScreen()
@@ -128,24 +156,67 @@ public class tomatoGameplay : MonoBehaviour
             return;
         }
 
-        Lose("TIME'S UP!", "The kitchen caught up with you.");
+        Lose("TIME'S UP!", "The kitchen caught up with you.", false);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (gameEnded) return;
+        if (gameEnded)
+        {
+            return;
+        }
 
-        if (HasTag(collision.collider, trashCanTag)) { Win(); return; }
-        if (HasTag(collision.collider, groundTag))   { Lose("YOU DIED.", _fallSubtitles[Random.Range(0, _fallSubtitles.Length)]); return; }
-        if (HasTag(collision.collider, knifeTag))    { SpawnJuiceExplosion(); Lose("YOU GOT CHOPPED", _knifeSubtitles[Random.Range(0, _knifeSubtitles.Length)]); }
+        if (HasTag(collision.collider, trashCanTag))
+        {
+            Win();
+            return;
+        }
+
+        if (HasTag(collision.collider, groundTag))
+        {
+            Lose(
+                "YOU DIED.",
+                _fallSubtitles[Random.Range(0, _fallSubtitles.Length)],
+                true
+            );
+            return;
+        }
+
+        if (HasTag(collision.collider, knifeTag))
+        {
+            SpawnJuiceExplosion();
+
+            Lose(
+                "YOU GOT CHOPPED",
+                _knifeSubtitles[Random.Range(0, _knifeSubtitles.Length)],
+                false
+            );
+        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (gameEnded) return;
+        if (gameEnded)
+        {
+            return;
+        }
 
-        if (HasTag(other, trashCanTag)) { Win(); return; }
-        if (HasTag(other, knifeTag))    { SpawnJuiceExplosion(); Lose("YOU GOT CHOPPED", _knifeSubtitles[Random.Range(0, _knifeSubtitles.Length)]); }
+        if (HasTag(other, trashCanTag))
+        {
+            Win();
+            return;
+        }
+
+        if (HasTag(other, knifeTag))
+        {
+            SpawnJuiceExplosion();
+
+            Lose(
+                "YOU GOT CHOPPED",
+                _knifeSubtitles[Random.Range(0, _knifeSubtitles.Length)],
+                false
+            );
+        }
     }
 
     private void SpawnJuiceExplosion()
@@ -157,6 +228,7 @@ public class tomatoGameplay : MonoBehaviour
                 transform.position,
                 Quaternion.identity
             );
+
             Destroy(vfx, 3f);
         }
 
@@ -174,10 +246,13 @@ public class tomatoGameplay : MonoBehaviour
         playerWon = true;
         restartQueued = false;
         _restartInputReadyTime = Time.time + restartInputDelay;
+
         RecordWinTime();
         _winMessage = _winSubtitles[Random.Range(0, _winSubtitles.Length)];
+
         StopTomato();
         InitConfetti();
+        PlayWinCheer();
         ChangeToGameOverMusic();
     }
 
@@ -199,32 +274,48 @@ public class tomatoGameplay : MonoBehaviour
         int minutes = Mathf.FloorToInt(seconds / 60f);
         int wholeSeconds = Mathf.FloorToInt(seconds % 60f);
         int hundredths = Mathf.FloorToInt((seconds - Mathf.Floor(seconds)) * 100f);
-        return string.Format("{0:00}:{1:00}.{2:00}", minutes, wholeSeconds, hundredths);
+
+        return string.Format(
+            "{0:00}:{1:00}.{2:00}",
+            minutes,
+            wholeSeconds,
+            hundredths
+        );
     }
 
-    private void Lose(string title, string message)
+    private void Lose(string title, string message, bool playSquishedSound)
     {
-        _loseTitle   = title;
+        _loseTitle = title;
         _loseMessage = message;
-        gameEnded    = true;
-        playerWon    = false;
+        gameEnded = true;
+        playerWon = false;
         restartQueued = false;
         _restartInputReadyTime = Time.time + restartInputDelay;
+
         StopTomato();
         InitSplats();
+
+        PlayLoseScream();
+
+        if (playSquishedSound)
+        {
+            PlaySquishedSound();
+        }
+
         ChangeToGameOverMusic();
     }
 
     private void StopTomato()
     {
-        rb.linearVelocity  = Vector3.zero;
+        rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-        rb.isKinematic     = true;
+        rb.isKinematic = true;
     }
 
     private void InitConfetti()
     {
         _confetti = new ConfettiParticle[120];
+
         Color[] colors = new Color[]
         {
             new Color(1f,   0.2f, 0.2f),
@@ -239,14 +330,21 @@ public class tomatoGameplay : MonoBehaviour
         {
             _confetti[i] = new ConfettiParticle
             {
-                position      = new Vector2(Random.Range(0f, Screen.width), Random.Range(-50f, Screen.height)),
-                velocity      = new Vector2(Random.Range(-60f, 60f), Random.Range(-200f, -80f)),
-                color         = colors[Random.Range(0, colors.Length)],
-                size          = Random.Range(8f, 18f),
-                rotation      = Random.Range(0f, 360f),
+                position = new Vector2(
+                    Random.Range(0f, Screen.width),
+                    Random.Range(-50f, Screen.height)
+                ),
+                velocity = new Vector2(
+                    Random.Range(-60f, 60f),
+                    Random.Range(-200f, -80f)
+                ),
+                color = colors[Random.Range(0, colors.Length)],
+                size = Random.Range(8f, 18f),
+                rotation = Random.Range(0f, 360f),
                 rotationSpeed = Random.Range(-180f, 180f)
             };
         }
+
         _confettiInitialised = true;
     }
 
@@ -270,6 +368,7 @@ public class tomatoGameplay : MonoBehaviour
     private void InitSplats()
     {
         _splats = new SplatCircle[18];
+
         for (int i = 0; i < _splats.Length; i++)
         {
             _splats[i] = new SplatCircle
@@ -281,6 +380,7 @@ public class tomatoGameplay : MonoBehaviour
                 size = Random.Range(40f, 180f)
             };
         }
+
         _splatsInitialised = true;
     }
 
@@ -297,14 +397,108 @@ public class tomatoGameplay : MonoBehaviour
         bgm.Play();
     }
 
+    private void PlayLoseScream()
+    {
+        if (loseScream == null)
+        {
+            return;
+        }
+
+        SetupLoseScreamSource();
+
+        loseScreamSource.PlayOneShot(
+            loseScream,
+            loseScreamVolume
+        );
+    }
+
+    private void PlaySquishedSound()
+    {
+        if (squishedSound == null)
+        {
+            return;
+        }
+
+        SetupSquishedAudioSource();
+
+        squishedAudioSource.PlayOneShot(
+            squishedSound,
+            squishedVolume
+        );
+    }
+
+    private void PlayWinCheer()
+    {
+        if (winCheer == null)
+        {
+            return;
+        }
+
+        SetupWinCheerSource();
+
+        winCheerSource.PlayOneShot(
+            winCheer,
+            winCheerVolume
+        );
+    }
+
+    private void SetupLoseScreamSource()
+    {
+        if (loseScreamSource == null)
+        {
+            loseScreamSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        loseScreamSource.playOnAwake = false;
+        loseScreamSource.loop = false;
+        loseScreamSource.spatialBlend = 0f;
+        loseScreamSource.volume = loseScreamVolume;
+        loseScreamSource.priority = 0;
+    }
+
+    private void SetupSquishedAudioSource()
+    {
+        if (squishedAudioSource == null)
+        {
+            squishedAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        squishedAudioSource.playOnAwake = false;
+        squishedAudioSource.loop = false;
+        squishedAudioSource.spatialBlend = 0f;
+        squishedAudioSource.volume = squishedVolume;
+        squishedAudioSource.priority = 0;
+    }
+
+    private void SetupWinCheerSource()
+    {
+        if (winCheerSource == null)
+        {
+            winCheerSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        winCheerSource.playOnAwake = false;
+        winCheerSource.loop = false;
+        winCheerSource.spatialBlend = 0f;
+        winCheerSource.volume = winCheerVolume;
+        winCheerSource.priority = 0;
+    }
+
     private void OnGUI()
     {
-        if (!gameEnded) return;
+        if (!gameEnded)
+        {
+            return;
+        }
 
         if (playerWon)
+        {
             DrawWinScreen();
+        }
         else
+        {
             DrawLoseScreen();
+        }
 
         DrawRestartClickArea();
         HandleEndScreenKeyRestart();
@@ -331,6 +525,7 @@ public class tomatoGameplay : MonoBehaviour
     private void HandleEndScreenKeyRestart()
     {
         Event currentEvent = Event.current;
+
         if (currentEvent == null || currentEvent.type != EventType.KeyDown)
         {
             return;
@@ -344,9 +539,13 @@ public class tomatoGameplay : MonoBehaviour
 
     private void DrawLoseScreen()
     {
-        if (gameFont != null) GUI.skin.font = gameFont;
+        if (gameFont != null)
+        {
+            GUI.skin.font = gameFont;
+        }
 
         GUI.color = new Color(0.15f, 0f, 0f, 1f);
+
         GUI.DrawTexture(
             new Rect(0, 0, Screen.width, Screen.height),
             Texture2D.whiteTexture
@@ -357,6 +556,7 @@ public class tomatoGameplay : MonoBehaviour
             foreach (var splat in _splats)
             {
                 GUI.color = new Color(Random.Range(0.6f, 0.9f), 0f, 0f, 0.85f);
+
                 GUI.DrawTexture(
                     new Rect(
                         splat.position.x - splat.size * 0.5f,
@@ -374,23 +574,26 @@ public class tomatoGameplay : MonoBehaviour
         GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize  = 120,
+            fontSize = 120,
             fontStyle = FontStyle.Bold
         };
+
         titleStyle.normal.textColor = new Color(1f, 0.9f, 0.9f);
 
         GUIStyle subStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize  = 60
+            fontSize = 60
         };
+
         subStyle.normal.textColor = new Color(1f, 0.7f, 0.7f);
 
         GUIStyle hintStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize  = 60
+            fontSize = 60
         };
+
         hintStyle.normal.textColor = new Color(1f, 0.5f, 0.5f);
 
         GUI.Label(
@@ -398,11 +601,13 @@ public class tomatoGameplay : MonoBehaviour
             _loseTitle,
             titleStyle
         );
+
         GUI.Label(
             new Rect(0, Screen.height * 0.52f, Screen.width, 50f),
             _loseMessage,
             subStyle
         );
+
         GUI.Label(
             new Rect(0, Screen.height * 0.62f, Screen.width, 40f),
             "Press any key or click to try again",
@@ -412,9 +617,13 @@ public class tomatoGameplay : MonoBehaviour
 
     private void DrawWinScreen()
     {
-        if (gameFont != null) GUI.skin.font = gameFont;
+        if (gameFont != null)
+        {
+            GUI.skin.font = gameFont;
+        }
 
         GUI.color = new Color(0.05f, 0.5f, 0.1f, 1f);
+
         GUI.DrawTexture(
             new Rect(0, 0, Screen.width, Screen.height),
             Texture2D.whiteTexture
@@ -426,6 +635,7 @@ public class tomatoGameplay : MonoBehaviour
             {
                 GUI.color = p.color;
                 GUIUtility.RotateAroundPivot(p.rotation, p.position);
+
                 GUI.DrawTexture(
                     new Rect(
                         p.position.x - p.size * 0.5f,
@@ -435,6 +645,7 @@ public class tomatoGameplay : MonoBehaviour
                     ),
                     Texture2D.whiteTexture
                 );
+
                 GUI.matrix = Matrix4x4.identity;
             }
         }
@@ -444,23 +655,26 @@ public class tomatoGameplay : MonoBehaviour
         GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize  = 120,
+            fontSize = 120,
             fontStyle = FontStyle.Bold
         };
+
         titleStyle.normal.textColor = Color.white;
 
         GUIStyle subStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize  = 32
+            fontSize = 32
         };
+
         subStyle.normal.textColor = new Color(0.9f, 1f, 0.9f);
 
         GUIStyle hintStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize  = 24
+            fontSize = 24
         };
+
         hintStyle.normal.textColor = new Color(0.7f, 1f, 0.7f);
 
         GUI.Label(
@@ -468,16 +682,19 @@ public class tomatoGameplay : MonoBehaviour
             "SAFE! 🍅",
             titleStyle
         );
+
         GUI.Label(
             new Rect(0, Screen.height * 0.52f, Screen.width, 50f),
             _winMessage,
             subStyle
         );
+
         GUI.Label(
             new Rect(0, Screen.height * 0.58f, Screen.width, 50f),
             "Time: " + FormatTime(_lastWinTime) + "    Best: " + FormatTime(_bestWinTime),
             subStyle
         );
+
         GUI.Label(
             new Rect(0, Screen.height * 0.68f, Screen.width, 40f),
             "Press any key or click to play again",

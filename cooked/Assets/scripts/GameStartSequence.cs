@@ -10,6 +10,7 @@ public class GameStartSequence : MonoBehaviour
 
     private enum GameIntroState
     {
+        StoryComic,
         StartScreen,
         Panning,
         Playing
@@ -24,7 +25,7 @@ public class GameStartSequence : MonoBehaviour
     [SerializeField] private Camera introCamera;
     [SerializeField] private string trashCanTag = "trashcan";
     [SerializeField] private string fallbackTrashCanTag = "TrashCan";
-    [SerializeField, Min(0.1f)] private float panDuration = 4f;
+    [SerializeField, Min(0.1f)] private float panDuration = 6f;
     [SerializeField] private float panHeight = 7f;
     [SerializeField] private float panDistance = 9f;
     [SerializeField] private float overviewHeightMultiplier = 2.8f;
@@ -33,7 +34,7 @@ public class GameStartSequence : MonoBehaviour
     [SerializeField] private float minimumCameraClearanceHeight = 40f;
     [SerializeField] private float arcHeight = 12f;
     [SerializeField, Range(0.55f, 0.98f)] private float fallStartProgress = 0.98f;
-    [SerializeField, Min(0f)] private float overviewDuration = 2f;
+    [SerializeField, Min(0f)] private float overviewDuration = 4f;
     [SerializeField] private float overviewRotationDegrees = 80f;
     [SerializeField] private Vector3 startFocusOffset = new Vector3(0f, 1f, 0f);
     [SerializeField] private Vector3 goalFocusOffset = new Vector3(0f, 3.2f, 0f);
@@ -42,9 +43,30 @@ public class GameStartSequence : MonoBehaviour
     [SerializeField] private string titleText = "COOKED";
     [SerializeField] private string startButtonText = "PLAY";
     [SerializeField] private string objectiveText = "Run to the trashcan to flee the human!";
+    [SerializeField] private string knifeText = "If you're too slow a knife will chop you.";
     [SerializeField] private string spongeText = "Is that a sponge in the sink...?";
     [SerializeField] private string controlsText = "Move: WASD / arrow keys";
     [SerializeField, Min(0f)] private float instructionSeconds = 0f;
+
+    [Header("Story Slideshow")]
+    [SerializeField] private Texture2D[] storyPanels;
+    [SerializeField] private string[] storyResourcePaths =
+    {
+        "StoryScenes/scene1",
+        "StoryScenes/scene2",
+        "StoryScenes/scene3"
+    };
+    [SerializeField, Min(0.1f)] private float storySecondsPerPanel = 7f;
+    [SerializeField, Min(0f)] private float storyFadeSeconds = 0.75f;
+    [SerializeField] private string storyResourceFolder = "StoryScenes";
+    [SerializeField] private string storySkipText = "Press Space to skip";
+
+    [Header("Music")]
+    [SerializeField] private AudioSource bgmSource;
+    [SerializeField] private AudioClip storyBGM;
+    [SerializeField] private AudioClip normalBGM;
+    [SerializeField, Range(0f, 1f)] private float storyBGMVolume = 0.7f;
+    [SerializeField] private float normalBGMVolume = -1f;
 
     [Header("Timer")]
     [SerializeField] private float timeLimitSeconds = 120f;
@@ -55,6 +77,7 @@ public class GameStartSequence : MonoBehaviour
 
     private readonly List<Behaviour> disabledCameraBehaviours = new List<Behaviour>();
     private static GameStartSequence instance;
+    private static bool storyPlayedThisSession;
     private GameIntroState state = GameIntroState.StartScreen;
     private Transform trashCanTarget;
     private Transform spongeTarget;
@@ -63,8 +86,18 @@ public class GameStartSequence : MonoBehaviour
     private bool savedCameraPose;
     private bool playerWasKinematic;
     private bool gameplayWasEnabled;
+    private bool storyClockStarted;
+    private float normalBGMSceneVolume = -1f;
     private float instructionStartTime;
     private float runStartTime;
+    private float storyStartTime;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSessionState()
+    {
+        instance = null;
+        storyPlayedThisSession = false;
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreateIfNeeded()
@@ -140,7 +173,20 @@ public class GameStartSequence : MonoBehaviour
         FreezePlayer();
         instructionStartTime = 0f;
         runStartTime = 0f;
-        state = GameIntroState.StartScreen;
+        LoadStoryPanelsIfNeeded();
+
+        if (!storyPlayedThisSession && storyPanels != null && storyPanels.Length > 0)
+        {
+            storyClockStarted = false;
+            storyStartTime = 0f;
+            state = GameIntroState.StoryComic;
+            PlayStoryBGM();
+        }
+        else
+        {
+            state = GameIntroState.StartScreen;
+            PlayNormalBGM();
+        }
     }
 
     private void ClearSceneReferences()
@@ -149,6 +195,7 @@ public class GameStartSequence : MonoBehaviour
         playerGameplay = null;
         playerBody = null;
         introCamera = null;
+        bgmSource = null;
         trashCanTarget = null;
         spongeTarget = null;
         disabledCameraBehaviours.Clear();
@@ -184,6 +231,31 @@ public class GameStartSequence : MonoBehaviour
             introCamera = Camera.main;
         }
 
+        if (bgmSource == null)
+        {
+            bgmSource = FindNamedAudioSource("BGM");
+        }
+
+        if (normalBGM == null && bgmSource != null)
+        {
+            normalBGM = bgmSource.clip;
+        }
+
+        if (bgmSource != null && normalBGMSceneVolume < 0f)
+        {
+            normalBGMSceneVolume = bgmSource.volume;
+        }
+
+        if (storyBGM == null)
+        {
+            AudioSource storySource = FindNamedAudioSource("StoryBGM");
+            if (storySource != null)
+            {
+                storyBGM = storySource.clip;
+                storySource.Stop();
+            }
+        }
+
         trashCanTarget = FindTaggedTransform(trashCanTag);
         if (trashCanTarget == null)
         {
@@ -198,6 +270,12 @@ public class GameStartSequence : MonoBehaviour
                 spongeTarget = sponge.transform;
             }
         }
+    }
+
+    private AudioSource FindNamedAudioSource(string objectName)
+    {
+        GameObject sourceObject = GameObject.Find(objectName);
+        return sourceObject != null ? sourceObject.GetComponent<AudioSource>() : null;
     }
 
     private Transform FindTaggedTransform(string tagName)
@@ -499,6 +577,12 @@ public class GameStartSequence : MonoBehaviour
 
     private void Update()
     {
+        if (state == GameIntroState.StoryComic)
+        {
+            UpdateStoryComic();
+            return;
+        }
+
         if (state != GameIntroState.Playing || playerGameplay == null || playerGameplay.HasEnded)
         {
             return;
@@ -516,6 +600,9 @@ public class GameStartSequence : MonoBehaviour
 
         switch (state)
         {
+            case GameIntroState.StoryComic:
+                DrawStoryComic();
+                break;
             case GameIntroState.StartScreen:
                 DrawStartScreen();
                 break;
@@ -531,6 +618,220 @@ public class GameStartSequence : MonoBehaviour
                 }
                 break;
         }
+    }
+
+    private void LoadStoryPanelsIfNeeded()
+    {
+        if (storyResourcePaths != null && storyResourcePaths.Length > 0)
+        {
+            List<Texture2D> loadedPanels = new List<Texture2D>();
+
+            for (int i = 0; i < storyResourcePaths.Length; i++)
+            {
+                Texture2D panel = Resources.Load<Texture2D>(storyResourcePaths[i]);
+                if (panel != null)
+                {
+                    loadedPanels.Add(panel);
+                }
+            }
+
+            if (loadedPanels.Count > 0)
+            {
+                storyPanels = loadedPanels.ToArray();
+                return;
+            }
+        }
+
+        if (storyPanels != null && storyPanels.Length > 0)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(storyResourceFolder))
+        {
+            return;
+        }
+
+        storyPanels = Resources.LoadAll<Texture2D>(storyResourceFolder);
+        System.Array.Sort(storyPanels, (a, b) => string.CompareOrdinal(a.name, b.name));
+    }
+
+    private void UpdateStoryComic()
+    {
+        if (!storyClockStarted)
+        {
+            return;
+        }
+
+        if (
+            Input.GetKeyDown(KeyCode.Space) ||
+            Time.unscaledTime - storyStartTime >= GetStoryDuration()
+        )
+        {
+            FinishStoryComic();
+        }
+    }
+
+    private void FinishStoryComic()
+    {
+        storyPlayedThisSession = true;
+        state = GameIntroState.StartScreen;
+        PlayNormalBGM();
+    }
+
+    private void PlayStoryBGM()
+    {
+        PlayBGM(storyBGM, storyBGMVolume);
+    }
+
+    private void PlayNormalBGM()
+    {
+        float volume =
+            normalBGMVolume >= 0f
+                ? normalBGMVolume
+                : normalBGMSceneVolume;
+
+        PlayBGM(normalBGM, volume);
+    }
+
+    private void PlayBGM(AudioClip clip, float volume)
+    {
+        if (bgmSource == null || clip == null)
+        {
+            return;
+        }
+
+        bgmSource.loop = true;
+        bgmSource.playOnAwake = false;
+        bgmSource.volume = Mathf.Clamp01(volume);
+
+        if (bgmSource.clip != clip)
+        {
+            bgmSource.Stop();
+            bgmSource.clip = clip;
+        }
+
+        if (!bgmSource.isPlaying)
+        {
+            bgmSource.Play();
+        }
+    }
+
+    private float GetStoryDuration()
+    {
+        return GetStoryPanelDuration() * storyPanels.Length;
+    }
+
+    private void DrawStoryComic()
+    {
+        DrawDimBackground(1f);
+
+        if (!storyClockStarted)
+        {
+            storyStartTime = Time.unscaledTime;
+            storyClockStarted = true;
+        }
+
+        float elapsed = Time.unscaledTime - storyStartTime;
+        int panelIndex = Mathf.Clamp(
+            Mathf.FloorToInt(elapsed / GetStoryPanelDuration()),
+            0,
+            storyPanels.Length - 1
+        );
+
+        DrawStorySlides(elapsed, panelIndex);
+        DrawStorySkipPrompt();
+    }
+
+    private float GetStoryPanelDuration()
+    {
+        return Mathf.Max(0.1f, storySecondsPerPanel);
+    }
+
+    private void DrawStorySlides(float elapsed, int panelIndex)
+    {
+        float panelElapsed = elapsed - panelIndex * GetStoryPanelDuration();
+        float transitionSeconds = GetStoryTransitionSeconds();
+
+        if (panelIndex > 0 && transitionSeconds > 0f && panelElapsed < transitionSeconds)
+        {
+            float transitionProgress = Mathf.Clamp01(panelElapsed / transitionSeconds);
+            DrawStorySlide(storyPanels[panelIndex - 1], 1f - transitionProgress);
+            DrawStorySlide(storyPanels[panelIndex], transitionProgress);
+            return;
+        }
+
+        DrawStorySlide(storyPanels[panelIndex], 1f);
+    }
+
+    private float GetStoryTransitionSeconds()
+    {
+        return Mathf.Min(
+            storyFadeSeconds,
+            GetStoryPanelDuration() * 0.45f
+        );
+    }
+
+    private void DrawStorySlide(Texture2D panel, float alpha)
+    {
+        if (panel == null)
+        {
+            return;
+        }
+
+        float padding = Mathf.Min(Screen.width, Screen.height) * 0.025f;
+        Rect panelRect = GetFittedStoryPanelRect(
+            panel,
+            padding,
+            padding,
+            Screen.width - padding * 2f,
+            Screen.height - padding * 2f
+        );
+
+        Color oldColor = GUI.color;
+        GUI.color = new Color(1f, 1f, 1f, alpha);
+        GUI.DrawTexture(panelRect, panel, ScaleMode.ScaleToFit);
+        GUI.color = oldColor;
+    }
+
+    private Rect GetFittedStoryPanelRect(
+        Texture2D texture,
+        float x,
+        float y,
+        float maxWidth,
+        float maxHeight
+    )
+    {
+        float textureAspect = (float)texture.width / texture.height;
+        float boundsAspect = maxWidth / maxHeight;
+
+        if (textureAspect > boundsAspect)
+        {
+            float height = maxWidth / textureAspect;
+            return new Rect(x, y + (maxHeight - height) * 0.5f, maxWidth, height);
+        }
+
+        float width = maxHeight * textureAspect;
+        return new Rect(x + (maxWidth - width) * 0.5f, y, width, maxHeight);
+    }
+
+    private void DrawStorySkipPrompt()
+    {
+        GUIStyle promptStyle = new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.LowerCenter,
+            fontSize = Mathf.Clamp(Screen.height / 38, 16, 28),
+            fontStyle = FontStyle.Bold
+        };
+
+        Color oldColor = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.85f);
+        GUI.Label(
+            new Rect(0f, 0f, Screen.width, Screen.height - 18f),
+            storySkipText,
+            promptStyle
+        );
+        GUI.color = oldColor;
     }
 
     private void ApplyGameFont()
@@ -565,7 +866,7 @@ public class GameStartSequence : MonoBehaviour
 
         Rect buttonRect = new Rect(
             Screen.width * 0.5f - 90f,
-            Screen.height * 0.58f,
+            Screen.height * 0.64f,
             180f,
             58f
         );
@@ -575,7 +876,7 @@ public class GameStartSequence : MonoBehaviour
             BeginIntroPan();
         }
 
-        DrawBestTimeRecord(new Rect(0f, Screen.height * 0.68f, Screen.width, 40f));
+        DrawBestTimeRecord(new Rect(0f, Screen.height * 0.75f, Screen.width, 40f));
 
         GUI.color = oldColor;
     }
@@ -617,7 +918,7 @@ public class GameStartSequence : MonoBehaviour
 
         GUI.Label(
             rect,
-            objectiveText + "\n" + spongeText + "\n" + controlsText,
+            objectiveText + "\n" +  knifeText + "\n" + spongeText + "\n" + controlsText,
             bodyStyle
         );
     }
@@ -653,7 +954,7 @@ public class GameStartSequence : MonoBehaviour
             wordWrap = true
         };
 
-        string text = objectiveText + "\n" + spongeText + "\n" + controlsText;
+        string text = objectiveText + "\n" +  knifeText + "\n" + spongeText + "\n" + controlsText;
         Vector2 size = style.CalcSize(new GUIContent(text));
         Rect rect = new Rect(
             20f,

@@ -7,6 +7,11 @@ public class SpongeBounce : MonoBehaviour
     [SerializeField] private float minSecondsBetweenBounces = 0.15f;
     [SerializeField] private bool onlyBounceTomato = true;
 
+    [Header("Sound")]
+    [SerializeField] private AudioClip launchSound;
+    [SerializeField] private AudioSource launchAudioSource;
+    [SerializeField, Range(0f, 1f)] private float launchVolume = 1f;
+
     [Header("Colors")]
     [SerializeField] private bool colorSpongeOnStart = true;
     [SerializeField] private Color spongeYellow = new Color(1f, 0.86f, 0.08f);
@@ -20,6 +25,8 @@ public class SpongeBounce : MonoBehaviour
         {
             ApplySpongeColors();
         }
+
+        SetupLaunchAudio();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -45,6 +52,43 @@ public class SpongeBounce : MonoBehaviour
         tomatoBody.linearVelocity = velocity;
 
         lastBounceTime = Time.time;
+        PlayLaunchSound();
+    }
+
+    private void SetupLaunchAudio()
+    {
+        if (launchSound == null)
+        {
+            return;
+        }
+
+        if (launchAudioSource == null)
+        {
+            launchAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        launchAudioSource.playOnAwake = false;
+        launchAudioSource.loop = false;
+        launchAudioSource.spatialBlend = 0f;
+        launchAudioSource.volume = launchVolume;
+    }
+
+    private void PlayLaunchSound()
+    {
+        if (launchSound == null)
+        {
+            return;
+        }
+
+        if (launchAudioSource == null)
+        {
+            SetupLaunchAudio();
+        }
+
+        if (launchAudioSource != null)
+        {
+            launchAudioSource.PlayOneShot(launchSound, launchVolume);
+        }
     }
 
     private void ApplySpongeColors()
