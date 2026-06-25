@@ -5,30 +5,34 @@ public class KnifeFollow : MonoBehaviour
     [Header("Target")]
     public Transform target;
 
-    [Header("Position")]
-    public float behindDistance = 2f;
-    public float restHeight     = 2f;
-    public float smoothSpeed    = 6f;
-
     [Header("Chop")]
     public float minChopInterval = 0.3f;
-    public float maxChopInterval = 1f;
+    public float maxChopInterval = 0.8f;
     public float chopHeight      = 23f;
-    public float restHeight2     = 29f;  // rename in inspector to "Raised Height"
-    public float chopDownSpeed   = 16f;
-    public float resetSpeed      = 8f;
+    public float raisedHeight    = 29f;
+    public float chopDownSpeed   = 20f;
+    public float resetSpeed      = 10f;
 
-    private Vector3 _currentVelocity;
+    [Header("Airborne Avoidance")]
+    public float airborneHorizontalOffset = 8f;
+    public float airborneFollowSharpness = 8f;
+
+    [Header("Rotation")]
+    public float rotationSpeed = 6f;
+
     private float   _chopTimer;
     private float   _nextChopTime;
-    private bool    _chopping = true;  // start chopping immediately
+    private bool    _chopping = true;
     private float   _currentY;
+    private Vector3 _currentDir = Vector3.forward;
+    private Vector3 _currentXZ;
 
     void Start()
     {
-        _currentY     = restHeight2;
+        _currentY     = raisedHeight;
         _nextChopTime = Random.Range(minChopInterval, maxChopInterval);
         _chopping     = true;
+        _currentXZ    = new Vector3(transform.position.x, 0f, transform.position.z);
     }
 
     void Update()
@@ -36,23 +40,31 @@ public class KnifeFollow : MonoBehaviour
         if (target == null) return;
 
         tomatoRoll roll = target.GetComponent<tomatoRoll>();
-        Vector3 dir = roll != null ? roll.LastMoveDirection : Vector3.forward;
+        Vector3 targetDir = roll != null ? roll.LastMoveDirection : Vector3.forward;
 
-        // XZ: always follow behind tomato
-        Vector3 desiredXZ = target.position - dir * behindDistance;
-
-        Vector3 smoothedXZ = Vector3.SmoothDamp(
-            new Vector3(transform.position.x, 0f, transform.position.z),
-            new Vector3(desiredXZ.x,          0f, desiredXZ.z),
-            ref _currentVelocity,
-            1f / smoothSpeed
+        // Smoothly rotate to face movement direction
+        _currentDir = Vector3.Slerp(
+            _currentDir,
+            targetDir,
+            Time.deltaTime * rotationSpeed
         );
 
-        // Y: constantly chop up and down with no idle hover
+        Vector3 desiredXZ = GetDesiredXZPosition(roll, targetDir);
+        _currentXZ = Vector3.Lerp(
+            _currentXZ,
+            desiredXZ,
+            1f - Mathf.Exp(-airborneFollowSharpness * Time.deltaTime)
+        );
+
+        float x = _currentXZ.x;
+        float z = _currentXZ.z;
+
+        // Y: chop straight down and back up
         if (_chopping)
         {
-            // slam down
-            _currentY = Mathf.MoveTowards(_currentY, chopHeight, chopDownSpeed * Time.deltaTime);
+            _currentY = Mathf.MoveTowards(
+                _currentY, chopHeight, chopDownSpeed * Time.deltaTime);
+
             if (Mathf.Abs(_currentY - chopHeight) < 0.01f)
             {
                 _chopping     = false;
@@ -62,11 +74,10 @@ public class KnifeFollow : MonoBehaviour
         }
         else
         {
-            // raise back up quickly
-            _currentY = Mathf.MoveTowards(_currentY, restHeight2, resetSpeed * Time.deltaTime);
+            _currentY = Mathf.MoveTowards(
+                _currentY, raisedHeight, resetSpeed * Time.deltaTime);
 
-            // as soon as it's back up, chop again immediately
-            if (Mathf.Abs(_currentY - restHeight2) < 0.05f)
+            if (Mathf.Abs(_currentY - raisedHeight) < 0.05f)
             {
                 _chopTimer += Time.deltaTime;
                 if (_chopTimer >= _nextChopTime)
@@ -74,7 +85,42 @@ public class KnifeFollow : MonoBehaviour
             }
         }
 
-        transform.position = new Vector3(smoothedXZ.x, _currentY, smoothedXZ.z);
-        transform.rotation = Quaternion.Euler(90f, 90f, 0f);
+        transform.position = new Vector3(x, _currentY, z);
+
+        // Face the direction the tomato is moving
+        if (_currentDir != Vector3.zero)
+        {
+            Quaternion targetRotation =
+                Quaternion.LookRotation(_currentDir)
+                * Quaternion.Euler(90f, 90f, 0f);
+
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                Time.deltaTime * rotationSpeed
+            );
+        }
+    }
+
+    private Vector3 GetDesiredXZPosition(tomatoRoll roll, Vector3 targetDir)
+    {
+        Vector3 targetXZ = new Vector3(target.position.x, 0f, target.position.z);
+
+        if (roll == null || roll.IsGrounded)
+        {
+            return targetXZ;
+        }
+
+        Vector3 awayDirection = targetDir.sqrMagnitude > 0.01f
+            ? -targetDir.normalized
+            : -target.forward;
+        awayDirection.y = 0f;
+
+        if (awayDirection.sqrMagnitude < 0.01f)
+        {
+            awayDirection = Vector3.back;
+        }
+
+        return targetXZ + awayDirection.normalized * airborneHorizontalOffset;
     }
 }
